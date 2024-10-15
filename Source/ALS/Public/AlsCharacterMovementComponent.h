@@ -84,24 +84,25 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings|Als Character")
 	TObjectPtr<UAlsMovementSettings> MovementSettings;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings|Als Character|Desired State",
-		ReplicatedUsing = "OnReplicated_DesiredAiming")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings|Als Character|Desired State")
 	uint8 bDesiredAiming : 1 {false};
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings|Als Character|Desired State", Replicated)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings|Als Character|Desired State")
+	bool bDesiredJumping{false};
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings|Als Character|Desired State")
 	FGameplayTag DesiredRotationMode{AlsRotationModeTags::ViewDirection};
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings|Als Character|Desired State", Replicated)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings|Als Character|Desired State")
 	FGameplayTag DesiredStance{AlsStanceTags::Standing};
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings|Als Character|Desired State", Replicated)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings|Als Character|Desired State")
 	FGameplayTag DesiredGait{AlsGaitTags::Running};
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings|Als Character|Desired State", Replicated)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings|Als Character|Desired State")
 	FGameplayTag ViewMode{AlsViewModeTags::ThirdPerson};
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings|Als Character|Desired State",
-		ReplicatedUsing = "OnReplicated_OverlayMode")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings|Als Character|Desired State")
 	FGameplayTag OverlayMode{AlsOverlayModeTags::Default};
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State|Als Character", Transient)
@@ -121,14 +122,13 @@ protected:
 
 	// Replicated raw view rotation. Depending on the context, this rotation can be in world space, or in movement
 	// base space. In most cases, it is better to use FAlsViewState::Rotation to take advantage of network smoothing.
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State|Als Character", Transient,
-		ReplicatedUsing = "OnReplicated_ReplicatedViewRotation")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State|Als Character", Transient)
 	FRotator ReplicatedViewRotation{ForceInit};
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State|Als Character", Transient)
 	FAlsViewState ViewState;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State|Als Character", Transient, Replicated)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State|Als Character", Transient)
 	FVector_NetQuantizeNormal InputDirection{ForceInit};
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State|Als Character",
@@ -144,7 +144,7 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State|Als Character", Transient)
 	FAlsMantlingState MantlingState;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State|Als Character", Transient, Replicated)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State|Als Character", Transient)
 	FVector_NetQuantize RagdollTargetLocation{ForceInit};
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State|Als Character", Transient)
@@ -154,6 +154,35 @@ protected:
 	FAlsRollingState RollingState;
 
 	FTimerHandle BrakingFrictionFactorResetTimer;
+
+	//start of input handling
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
+	TObjectPtr<UInputAction> SprintAction{nullptr};
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
+	TObjectPtr<UInputAction> WalkAction{nullptr};
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
+	TObjectPtr<UInputAction> CrouchAction{nullptr};
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
+	TObjectPtr<UInputAction> JumpAction{nullptr};
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
+	TObjectPtr<UInputAction> RotationModeAction{nullptr};
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
+	TObjectPtr<UInputAction> ViewModeAction{nullptr};
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
+	TObjectPtr<UInputAction> SwitchShoulderAction{nullptr};
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
+	TObjectPtr<UInputAction> AimAction{nullptr};
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
+	TObjectPtr<UInputAction> RagdollAction{nullptr};
+	
 
 public:
 	FAlsPhysicsRotationDelegate OnPhysicsRotation;
@@ -184,6 +213,64 @@ public:
 
 	virtual float GetMaxAcceleration() const override;
 
+	//GMC functions
+	
+protected:
+	void OnMovementModeChanged_Implementation(EGMC_MovementMode PreviousMovementMode) override;
+	
+	void BindReplicationData_Implementation() override;
+	
+	void SetupPlayerInputComponent_Implementation(UInputComponent* PlayerInputComponent) override;
+	
+	FVector PreProcessInputVector_Implementation(FVector InRawInputVector) override;
+	
+	void ClampToValidValues() override;
+	
+	void PreMovementUpdate_Implementation(float DeltaSeconds) override;
+	
+	void MovementUpdate_Implementation(float DeltaSeconds) override;
+	
+	void MovementUpdateSimulated_Implementation(float DeltaSeconds) override;
+	
+	FVector TransformInputVectorAbsoluteZ(const FVector& AbsoluteInputVector) const override;
+private:
+	EGMC_CollisionShape InterpToSphereAndSwitchCollisionShape(EGMC_CollisionShape CurrentShape, float SphereRadius, float DeltaSeconds);
+	void MaintainMeshOffset();
+	void MaintainMeshOffsetSimulated();
+
+	//End of GMC functions
+	//Start of input actions
+	
+protected:
+	virtual void StartSprintAction(const FInputActionInstance& InputAction);
+	virtual void StopSprintAction(const FInputActionInstance& InputAction);
+
+	virtual void StartWalkAction(const FInputActionInstance& InputAction);
+	virtual void StopWalkAction(const FInputActionInstance& InputAction);
+
+	virtual void StartCrouchAction(const FInputActionInstance& InputAction);
+	virtual void StopCrouchAction(const FInputActionInstance& InputAction);
+
+	virtual void StartJumpAction(const FInputActionInstance& InputAction);
+	virtual void StopJumpAction(const FInputActionInstance& InputAction);
+
+	virtual void StartRotationModeAction(const FInputActionInstance& InputAction);
+	virtual void StopRotationModeAction(const FInputActionInstance& InputAction);
+
+	virtual void StartViewModeAction(const FInputActionInstance& InputAction);
+	virtual void StopViewModeAction(const FInputActionInstance& InputAction);
+
+	virtual void StartSwitchShoulderAction(const FInputActionInstance& InputAction);
+	virtual void StopSwitchShoulderAction(const FInputActionInstance& InputAction);
+
+	virtual void StartAimAction(const FInputActionInstance& InputAction);
+	virtual void StopAimAction(const FInputActionInstance& InputAction);
+
+	virtual void StartRagdollAction(const FInputActionInstance& InputAction);
+	virtual void StopRagdollAction(const FInputActionInstance& InputAction);
+
+	//end of input actions
+	
 protected:
 	virtual void ControlledCharacterMove(const FVector& InputVector, float DeltaTime) override;
 
@@ -300,15 +387,6 @@ public:
 private:
 	void SetDesiredAiming(bool bNewDesiredAiming, bool bSendRpc);
 
-	UFUNCTION(Client, Reliable)
-	void ClientSetDesiredAiming(bool bNewDesiredAiming);
-
-	UFUNCTION(Server, Reliable)
-	void ServerSetDesiredAiming(bool bNewDesiredAiming);
-
-	UFUNCTION()
-	void OnReplicated_DesiredAiming(bool bPreviousDesiredAiming);
-
 protected:
 	UFUNCTION(BlueprintNativeEvent, Category = "Als Character")
 	void OnDesiredAimingChanged(bool bPreviousDesiredAiming);
@@ -323,12 +401,6 @@ public:
 
 private:
 	void SetDesiredRotationMode(const FGameplayTag& NewDesiredRotationMode, bool bSendRpc);
-
-	UFUNCTION(Client, Reliable)
-	void ClientSetDesiredRotationMode(const FGameplayTag& NewDesiredRotationMode);
-
-	UFUNCTION(Server, Reliable)
-	void ServerSetDesiredRotationMode(const FGameplayTag& NewDesiredRotationMode);
 
 	// Rotation Mode
 
@@ -355,12 +427,6 @@ public:
 
 private:
 	void SetDesiredStance(const FGameplayTag& NewDesiredStance, bool bSendRpc);
-
-	UFUNCTION(Client, Reliable)
-	void ClientSetDesiredStance(const FGameplayTag& NewDesiredStance);
-
-	UFUNCTION(Server, Reliable)
-	void ServerSetDesiredStance(const FGameplayTag& NewDesiredStance);
 
 protected:
 	virtual void ApplyDesiredStance();
@@ -394,12 +460,6 @@ public:
 private:
 	void SetDesiredGait(const FGameplayTag& NewDesiredGait, bool bSendRpc);
 
-	UFUNCTION(Client, Reliable)
-	void ClientSetDesiredGait(const FGameplayTag& NewDesiredGait);
-
-	UFUNCTION(Server, Reliable)
-	void ServerSetDesiredGait(const FGameplayTag& NewDesiredGait);
-
 	// Gait
 
 public:
@@ -430,15 +490,6 @@ public:
 
 private:
 	void SetOverlayMode(const FGameplayTag& NewOverlayMode, bool bSendRpc);
-
-	UFUNCTION(Client, Reliable)
-	void ClientSetOverlayMode(const FGameplayTag& NewOverlayMode);
-
-	UFUNCTION(Server, Reliable)
-	void ServerSetOverlayMode(const FGameplayTag& NewOverlayMode);
-
-	UFUNCTION()
-	void OnReplicated_OverlayMode(const FGameplayTag& PreviousOverlayMode);
 
 protected:
 	UFUNCTION(BlueprintNativeEvent, Category = "Als Character")
@@ -472,25 +523,11 @@ protected:
 public:
 	virtual FRotator GetViewRotation() const override;
 
-private:
-	void SetReplicatedViewRotation(const FRotator& NewViewRotation, bool bSendRpc);
-
-	UFUNCTION(Server, Unreliable)
-	void ServerSetReplicatedViewRotation(const FRotator& NewViewRotation);
-
-	UFUNCTION()
-	void OnReplicated_ReplicatedViewRotation();
-
-public:
-	void CorrectViewNetworkSmoothing(const FRotator& NewTargetRotation, bool bRotationIsBaseRelative);
-
 public:
 	const FAlsViewState& GetViewState() const;
 
 private:
 	void RefreshView(float DeltaTime);
-
-	void RefreshViewNetworkSmoothing(float DeltaTime);
 
 	// Locomotion
 
@@ -508,31 +545,14 @@ private:
 
 	void RefreshLocomotionLate();
 
-	UFUNCTION(Server, Reliable)
-	void ServerSetInitialVelocityYawAngle(float NewVelocityYawAngle);
-
-	UFUNCTION(NetMulticast, Reliable)
-	void MulticastSetInitialVelocityYawAngle(float NewVelocityYawAngle);
-
 	// Jumping
 
 public:
 	virtual void Jump() override;
 
 	virtual void OnJumped_Implementation() override;
-
-private:
-	UFUNCTION(NetMulticast, Reliable)
-	void MulticastOnJumpedNetworked();
-
-	void OnJumpedNetworked();
-
+	
 	// Rotation
-
-public:
-	virtual void FaceRotation(FRotator Rotation, float DeltaTime) override final;
-
-	void CharacterMovement_OnPhysicsRotation(float DeltaTime);
 
 private:
 	void RefreshGroundedRotation(float DeltaTime);
@@ -585,13 +605,7 @@ public:
 
 private:
 	void StartRolling(float PlayRate, float TargetYawAngle);
-
-	UFUNCTION(Server, Reliable)
-	void ServerStartRolling(UAnimMontage* Montage, float PlayRate, float InitialYawAngle, float TargetYawAngle);
-
-	UFUNCTION(NetMulticast, Reliable)
-	void MulticastStartRolling(UAnimMontage* Montage, float PlayRate, float InitialYawAngle, float TargetYawAngle);
-
+	
 	void StartRollingImplementation(UAnimMontage* Montage, float PlayRate, float InitialYawAngle, float TargetYawAngle);
 
 	void RefreshRolling(float DeltaTime);
@@ -611,12 +625,6 @@ private:
 	bool StartMantlingInAir();
 
 	bool StartMantling(const FAlsMantlingTraceSettings& TraceSettings);
-
-	UFUNCTION(Server, Reliable)
-	void ServerStartMantling(const FAlsMantlingParameters& Parameters);
-
-	UFUNCTION(NetMulticast, Reliable)
-	void MulticastStartMantling(const FAlsMantlingParameters& Parameters);
 
 	void StartMantlingImplementation(const FAlsMantlingParameters& Parameters);
 
@@ -649,12 +657,6 @@ public:
 	void StartRagdolling();
 
 private:
-	UFUNCTION(Server, Reliable)
-	void ServerStartRagdolling();
-
-	UFUNCTION(NetMulticast, Reliable)
-	void MulticastStartRagdolling();
-
 	void StartRagdollingImplementation();
 
 protected:
@@ -668,12 +670,6 @@ public:
 	bool StopRagdolling();
 
 private:
-	UFUNCTION(Server, Reliable)
-	void ServerStopRagdolling();
-
-	UFUNCTION(NetMulticast, Reliable)
-	void MulticastStopRagdolling();
-
 	void StopRagdollingImplementation();
 
 protected:
@@ -685,9 +681,6 @@ protected:
 
 private:
 	void SetRagdollTargetLocation(const FVector& NewTargetLocation);
-
-	UFUNCTION(Server, Unreliable)
-	void ServerSetRagdollTargetLocation(const FVector_NetQuantize& NewTargetLocation);
 
 	void RefreshRagdolling(float DeltaTime);
 
