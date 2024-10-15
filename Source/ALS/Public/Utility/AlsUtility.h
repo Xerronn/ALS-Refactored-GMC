@@ -1,5 +1,6 @@
 #pragma once
 
+#include "AlsCharacter.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "AlsUtility.generated.h"
 
@@ -20,7 +21,7 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "ALS|Utility",
 		Meta = (DefaultToSelf = "Character", AutoCreateRefTerm = "CurveName", ReturnDisplayName = "Curve Value"))
-	static float GetAnimationCurveValueFromCharacter(const ACharacter* Character, const FName& CurveName);
+	static float GetAnimationCurveValueFromCharacter(const AAlsCharacter* Character, const FName& CurveName);
 
 	UFUNCTION(BlueprintPure, Category = "ALS|Utility", Meta = (AutoCreateRefTerm = "Tag", ReturnDisplayName = "Child Tags"))
 	static FGameplayTagContainer GetChildTags(const FGameplayTag& Tag);
@@ -30,8 +31,6 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "ALS|Utility", Meta = (WorldContext = "WorldContext", ReturnDisplayName = "Ping"))
 	static float GetFirstPlayerPingSeconds(const UObject* WorldContext);
-
-	static bool TryGetMovementBaseRotationSpeed(const FBasedMovementInfo& BasedMovement, FRotator& RotationSpeed);
 };
 
 constexpr FStringView UAlsUtility::BoolToString(const bool bValue)
