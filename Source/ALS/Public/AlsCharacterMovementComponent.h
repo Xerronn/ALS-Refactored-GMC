@@ -24,6 +24,28 @@ public:
 	uint8 bAllowImprovedPenetrationAdjustment : 1 {true};
 
 protected:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<AAlsCharacter> CharacterOwner;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GMALS")
+	float StandingHalfHeight{0.f};
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GMALS")
+	float DefaultRadius{0.f};
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GMALS")
+	float CrouchedHalfHeight{60.f};
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GMALS")
+	float ProneHalfHeight{30.f};
+
+	//settings
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GMALS")
+	float ChangeStanceSpeed{100.f};
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GMALS")
+	float JumpForce{500.f};
+	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State", Transient)
 	FAlsMovementGaitSettings GaitSettings;
 
