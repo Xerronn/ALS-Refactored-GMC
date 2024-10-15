@@ -52,8 +52,6 @@ public:
 #if WITH_EDITOR
 	virtual bool CanEditChange(const FProperty* Property) const override;
 #endif
-	
-	virtual void PreRegisterAllComponents() override;
 
 	virtual void PostRegisterAllComponents() override;
 
