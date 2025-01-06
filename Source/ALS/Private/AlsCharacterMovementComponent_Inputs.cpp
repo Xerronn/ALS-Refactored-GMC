@@ -1,11 +1,10 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+//  Fill out your copyright notice in the Description page of Project Settings.
 
 #include "AlsCharacterMovementComponent.h"
 
 #include "AlsAnimationInstance.h"
 #include "EnhancedInputComponent.h"
 #include "AlsCharacter.h"
-#include "Camera/AlsCameraComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -37,37 +36,7 @@ void UAlsCharacterMovementComponent::SetupPlayerInputComponent_Implementation(UI
 		EnhancedInputComponent->BindAction(RagdollAction, ETriggerEvent::Triggered, this, &UAlsCharacterMovementComponent::StartRagdollAction);
 		EnhancedInputComponent->BindAction(RagdollAction, ETriggerEvent::Completed, this, &UAlsCharacterMovementComponent::StopRagdollAction);
 
-		EnhancedInputComponent->BindAction(LeanLeftAction, ETriggerEvent::Triggered, this, &UAlsCharacterMovementComponent::StartLeanLeftAction);
-		EnhancedInputComponent->BindAction(LeanLeftAction, ETriggerEvent::Completed, this, &UAlsCharacterMovementComponent::StopLeanLeftAction);
-		EnhancedInputComponent->BindAction(LeanRightAction, ETriggerEvent::Triggered, this, &UAlsCharacterMovementComponent::StartLeanRightAction);
-		EnhancedInputComponent->BindAction(LeanRightAction, ETriggerEvent::Completed, this, &UAlsCharacterMovementComponent::StopLeanRightAction);
 	}
-}
-
-void UAlsCharacterMovementComponent::ApplyViewInput(const FInputActionInstance& InputAction)
-{
-	Super::ApplyViewInput(InputAction);
-
-	// const FVector& Value = InputAction.GetValue().Get<FVector>();
-	// float newX;
-	// bool addYaw;
-	// float newY;
-	// bool addPitch;
-	//
-	// //add in sensitivty scale here set via player settings
-	// if (USKGShooterPawnComponent* FPSComponent = CharacterOwner->GetFPSComponent())
-	// {
-	// 	FPSComponent->GetSensitivityMultiplier(Value.X, 1.0f, Value.Y, 1.0f, newX, addYaw, newY, addPitch);
-	// 	if (addYaw)
-	// 	{
-	// 		GetGMCPawnOwner()->AddControllerYawInput(newX);
-	// 	}
-	// 	if (addPitch)
-	// 	{
-	// 		GetGMCPawnOwner()->AddControllerPitchInput(-newY);
-	// 	}
-	// 	FPSComponent->SetMouseInput(newX, -newY);
-	// }
 }
 
 void UAlsCharacterMovementComponent::StartSprintAction(const FInputActionInstance& InputAction)
@@ -107,12 +76,12 @@ void UAlsCharacterMovementComponent::StartJumpAction(const FInputActionInstance&
 		SetDesiredStance(AlsStanceTags::Standing);
 		return;
 	}
-	bWantsToJump = true;
+	bDesiredJumping = true;
 }
 	
 void UAlsCharacterMovementComponent::StopJumpAction(const FInputActionInstance& InputAction)
 {
-	bWantsToJump = false;
+	bDesiredJumping = false;
 }
 
 void UAlsCharacterMovementComponent::StartRotationModeAction(const FInputActionInstance& InputAction)
@@ -139,7 +108,7 @@ void UAlsCharacterMovementComponent::StopViewModeAction(const FInputActionInstan
 
 void UAlsCharacterMovementComponent::StartSwitchShoulderAction(const FInputActionInstance& InputAction)
 {
-	CharacterOwner->GetCamera()->SetRightShoulder(!CharacterOwner->GetCamera()->IsRightShoulder());
+	// CharacterOwner->GetCamera()->SetRightShoulder(!CharacterOwner->GetCamera()->IsRightShoulder());
 }
 	
 void UAlsCharacterMovementComponent::StopSwitchShoulderAction(const FInputActionInstance& InputAction)
@@ -161,28 +130,10 @@ void UAlsCharacterMovementComponent::StopAimAction(const FInputActionInstance& I
 
 void UAlsCharacterMovementComponent::StartRagdollAction(const FInputActionInstance& InputAction)
 {
-	bWantsToRagdoll = !bWantsToRagdoll;
+	bDesiredRagdolling = !bDesiredRagdolling;
 }
 	
 void UAlsCharacterMovementComponent::StopRagdollAction(const FInputActionInstance& InputAction)
 {
 	return;
-}
-
-void UAlsCharacterMovementComponent::StartLeanLeftAction(const FInputActionInstance& InputAction)
-{
-	SetDesiredLeanLeft(true);
-}
-void UAlsCharacterMovementComponent::StopLeanLeftAction(const FInputActionInstance& InputAction)
-{
-	SetDesiredLeanLeft(false);
-}
-
-void UAlsCharacterMovementComponent::StartLeanRightAction(const FInputActionInstance& InputAction)
-{
-	SetDesiredLeanRight(true);
-}
-void UAlsCharacterMovementComponent::StopLeanRightAction(const FInputActionInstance& InputAction)
-{
-	SetDesiredLeanRight(false);
 }

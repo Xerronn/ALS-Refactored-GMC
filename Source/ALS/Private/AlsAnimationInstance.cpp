@@ -542,7 +542,7 @@ void UAlsAnimationInstance::RefreshLocomotionOnGameThread()
 
 	const TObjectPtr<UAlsCharacterMovementComponent> Movement{Character->GetCharacterMovement()};
 
-	LocomotionState.MaxAcceleration = Movement->GetMaxAcceleration();
+	LocomotionState.MaxAcceleration = Movement->GetInputAcceleration();
 	LocomotionState.MaxBrakingDeceleration = Movement->GetBrakingDeceleration();
 	LocomotionState.WalkableFloorAngleCos = FMath::Cos(FMath::DegreesToRadians(Movement->WalkableFloorAngle));;
 

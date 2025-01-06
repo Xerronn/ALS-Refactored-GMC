@@ -112,6 +112,12 @@ void AAlsCharacter::BeginPlay()
 	RefreshMeshProperties();
 }
 
+void AAlsCharacter::FaceRotation(const FRotator Rotation, const float DeltaTime)
+{
+	// Left empty intentionally. We are ignoring rotation changes from external
+	// sources because ALS itself has full control over character rotation.
+}
+
 void AAlsCharacter::CalcCamera(const float DeltaTime, FMinimalViewInfo& ViewInfo)
 {
 	if (!OnCalculateCamera(DeltaTime, ViewInfo))
@@ -146,6 +152,14 @@ void AAlsCharacter::PossessedBy(AController* NewController)
 bool AAlsCharacter::OnCalculateCamera_Implementation(float DeltaTime, FMinimalViewInfo& ViewInfo)
 {
 	return false;
+}
+
+void AAlsCharacter::OnJump_Implementation()
+{
+	if (AnimationInstance.IsValid())
+	{
+		AnimationInstance->Jump();
+	}
 }
 
 void AAlsCharacter::RefreshMeshProperties() const

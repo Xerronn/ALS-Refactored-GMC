@@ -1,6 +1,7 @@
 #pragma once
 
 #include "GMCOrganicMovementComponent.h"
+#include "Settings/AlsCharacterSettings.h"
 #include "Settings/AlsMovementSettings.h"
 #include "State/AlsLocomotionState.h"
 #include "State/AlsMantlingState.h"
@@ -27,36 +28,36 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<AAlsCharacter> CharacterOwner;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GMALS")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GMC/ALS")
 	float StandingHalfHeight{0.f};
 	
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GMALS")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GMC/ALS")
 	float DefaultRadius{0.f};
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GMALS")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GMC/ALS")
 	float CrouchedHalfHeight{60.f};
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GMALS")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GMC/ALS")
 	float ProneHalfHeight{30.f};
 
 	//settings
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GMALS")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GMC/ALS")
 	float ChangeStanceSpeed{100.f};
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GMALS")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GMC/ALS")
 	float JumpForce{500.f};
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State", Transient)
 	FAlsMovementGaitSettings GaitSettings;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State", Transient)
+	bool bCanJump{false};
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State", Transient)
 	FGameplayTag MaxAllowedGait{AlsGaitTags::Running};
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State", Transient, Meta = (ClampMin = 0, ClampMax = 3))
 	float GaitAmount{0.0f};
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State", Transient, Meta = (ClampMin = 0, ForceUnits = "cm/s^2"))
-	float MaxAccelerationWalking{0.0f};
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State", Transient)
 	uint8 bMovementModeLocked : 1 {false};
@@ -90,6 +91,12 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings|Als Character|Desired State")
 	bool bDesiredJumping{false};
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "State|Als Character")
+	bool bJustJumped{false};
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings|Als Character|Desired State")
+	bool bDesiredRagdolling{false};
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings|Als Character|Desired State")
 	FGameplayTag DesiredRotationMode{AlsRotationModeTags::ViewDirection};
 
@@ -104,9 +111,6 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings|Als Character|Desired State")
 	FGameplayTag OverlayMode{AlsOverlayModeTags::Default};
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State|Als Character", Transient)
-	FGameplayTag LocomotionMode{AlsLocomotionModeTags::Grounded};
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State|Als Character", Transient)
 	FGameplayTag RotationMode{AlsRotationModeTags::ViewDirection};
@@ -196,25 +200,7 @@ public:
 
 	virtual void BeginPlay() override;
 
-	virtual FVector ConsumeInputVector() override;
-
-	virtual void SetMovementMode(EMovementMode NewMovementMode, uint8 NewCustomMode = 0) override;
-
-	virtual void OnMovementModeChanged(EMovementMode PreviousMovementMode, uint8 PreviousCustomMode) override;
-
-	virtual bool ShouldPerformAirControlForPathFollowing() const override;
-
-	virtual void UpdateBasedRotation(FRotator& FinalRotation, const FRotator& ReducedRotation) override;
-
-	virtual bool ApplyRequestedMove(float DeltaTime, float CurrentMaxAcceleration, float MaxSpeed, float Friction,
-	                                float BrakingDeceleration, FVector& RequestedAcceleration, float& RequestedSpeed) override;
-
-	virtual void CalcVelocity(float DeltaTime, float Friction, bool bFluid, float BrakingDeceleration) override;
-
-	virtual float GetMaxAcceleration() const override;
-
 	//GMC functions
-	
 protected:
 	void OnMovementModeChanged_Implementation(EGMC_MovementMode PreviousMovementMode) override;
 	
@@ -237,10 +223,9 @@ private:
 	EGMC_CollisionShape InterpToSphereAndSwitchCollisionShape(EGMC_CollisionShape CurrentShape, float SphereRadius, float DeltaSeconds);
 	void MaintainMeshOffset();
 	void MaintainMeshOffsetSimulated();
-
 	//End of GMC functions
-	//Start of input actions
 	
+	//Start of input actions
 protected:
 	virtual void StartSprintAction(const FInputActionInstance& InputAction);
 	virtual void StopSprintAction(const FInputActionInstance& InputAction);
@@ -268,44 +253,7 @@ protected:
 
 	virtual void StartRagdollAction(const FInputActionInstance& InputAction);
 	virtual void StopRagdollAction(const FInputActionInstance& InputAction);
-
 	//end of input actions
-	
-protected:
-	virtual void ControlledCharacterMove(const FVector& InputVector, float DeltaTime) override;
-
-public:
-	virtual void PhysicsRotation(float DeltaTime) override;
-
-	// ReSharper disable once CppRedefinitionOfDefaultArgumentInOverrideFunction
-	virtual void MoveSmooth(const FVector& InVelocity, float DeltaTime, FStepDownResult* StepDownResult = nullptr) override;
-
-protected:
-	virtual void PhysWalking(float DeltaTime, int32 IterationsCount) override;
-
-	virtual void PhysNavWalking(float DeltaTime, int32 IterationsCount) override;
-
-	virtual void PhysCustom(float DeltaTime, int32 IterationsCount) override;
-
-public:
-	virtual void ComputeFloorDist(const FVector& CapsuleLocation, float LineDistance, float SweepDistance, FFindFloorResult& OutFloorResult,
-	                              float SweepRadius, const FHitResult* DownwardSweepResult) const override;
-
-protected:
-	virtual void PerformMovement(float DeltaTime) override;
-
-public:
-	virtual FNetworkPredictionData_Client* GetPredictionData_Client() const override;
-
-protected:
-	virtual void SmoothClientPosition(float DeltaTime) override;
-
-	virtual void MoveAutonomous(float ClientTimeStamp, float DeltaTime, uint8 CompressedFlags, const FVector& NewAcceleration) override;
-
-private:
-	void SavePenetrationAdjustment(const FHitResult& Hit);
-
-	void ApplyPendingPenetrationAdjustment();
 
 public:
 	UFUNCTION(BlueprintCallable, Category = "ALS|Character Movement")
@@ -313,25 +261,17 @@ public:
 
 	const FAlsMovementGaitSettings& GetGaitSettings() const;
 
+	// Returns the character's current speed, mapped to the speed ranges from the movement settings.
+	// Varies from 0 to 3, where 0 is stopped, 1 is walking, 2 is running, and 3 is sprinting.
+	float GetGaitAmount() const;
+
 private:
 	void RefreshGaitSettings();
 
 public:
-	const FGameplayTag& GetRotationMode() const;
-
-	void SetRotationMode(const FGameplayTag& NewRotationMode);
-
-	const FGameplayTag& GetStance() const;
-
-	void SetStance(const FGameplayTag& NewStance);
-
-	const FGameplayTag& GetMaxAllowedGait() const;
-
 	void SetMaxAllowedGait(const FGameplayTag& NewMaxAllowedGait);
-
-	// Returns the character's current speed, mapped to the speed ranges from the movement settings.
-	// Varies from 0 to 3, where 0 is stopped, 1 is walking, 2 is running, and 3 is sprinting.
-	float GetGaitAmount() const;
+	
+	const FGameplayTag& GetMaxAllowedGait() const;
 
 private:
 	void RefreshGroundedMovementSettings();
@@ -348,44 +288,17 @@ public:
 public:
 	const FGameplayTag& GetViewMode() const;
 
-	UFUNCTION(BlueprintCallable, Category = "ALS|Character", Meta = (AutoCreateRefTerm = "NewViewMode"))
-	void SetViewMode(const FGameplayTag& NewViewMode);
-
 private:
-	void SetViewMode(const FGameplayTag& NewViewMode, bool bSendRpc);
-
-	UFUNCTION(Client, Reliable)
-	void ClientSetViewMode(const FGameplayTag& NewViewMode);
-
-	UFUNCTION(Server, Reliable)
-	void ServerSetViewMode(const FGameplayTag& NewViewMode);
-
-	// Locomotion Mode
-
-public:
-	virtual void OnMovementModeChanged(EMovementMode PreviousMovementMode, uint8 PreviousCustomMode = 0) override;
-
-public:
-	const FGameplayTag& GetLocomotionMode() const;
-
-protected:
-	void SetLocomotionMode(const FGameplayTag& NewLocomotionMode);
-
-	virtual void NotifyLocomotionModeChanged(const FGameplayTag& PreviousLocomotionMode);
-
-	UFUNCTION(BlueprintImplementableEvent, Category = "Als Character")
-	void OnLocomotionModeChanged(const FGameplayTag& PreviousLocomotionMode);
-
+	void SetViewMode(const FGameplayTag& NewViewMode);
+	
 	// Desired Aiming
 
 public:
 	bool IsDesiredAiming() const;
 
+private:
 	UFUNCTION(BlueprintCallable, Category = "ALS|Character")
 	void SetDesiredAiming(bool bNewDesiredAiming);
-
-private:
-	void SetDesiredAiming(bool bNewDesiredAiming, bool bSendRpc);
 
 protected:
 	UFUNCTION(BlueprintNativeEvent, Category = "Als Character")
@@ -396,11 +309,9 @@ protected:
 public:
 	const FGameplayTag& GetDesiredRotationMode() const;
 
+private:
 	UFUNCTION(BlueprintCallable, Category = "ALS|Character", Meta = (AutoCreateRefTerm = "NewDesiredRotationMode"))
 	void SetDesiredRotationMode(const FGameplayTag& NewDesiredRotationMode);
-
-private:
-	void SetDesiredRotationMode(const FGameplayTag& NewDesiredRotationMode, bool bSendRpc);
 
 	// Rotation Mode
 
@@ -410,41 +321,36 @@ public:
 protected:
 	void SetRotationMode(const FGameplayTag& NewRotationMode);
 
-	virtual void NotifyRotationModeChanged(const FGameplayTag& PreviousRotationMode);
-
-	UFUNCTION(BlueprintImplementableEvent, Category = "Als Character")
+	UFUNCTION(BlueprintNativeEvent, Category = "Als Character")
 	void OnRotationModeChanged(const FGameplayTag& PreviousRotationMode);
 
-	void RefreshRotationMode();
+	void ApplyDesiredRotationMode(const FGameplayTag& RotationModeToApply, float DeltaSeconds);
 
 	// Desired Stance
 
 public:
 	const FGameplayTag& GetDesiredStance() const;
 
+private:
 	UFUNCTION(BlueprintCallable, Category = "ALS|Character", Meta = (AutoCreateRefTerm = "NewDesiredStance"))
 	void SetDesiredStance(const FGameplayTag& NewDesiredStance);
 
-private:
-	void SetDesiredStance(const FGameplayTag& NewDesiredStance, bool bSendRpc);
-
 protected:
-	virtual void ApplyDesiredStance();
+	virtual void ApplyDesiredStance(const FGameplayTag& StanceToApply, float DeltaSeconds);
 
 	// Stance
 
 public:
-	virtual bool CanCrouch() const override;
-
-	virtual void OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
-
-	virtual void OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
+	virtual bool CanCrouch() const;
 
 public:
 	const FGameplayTag& GetStance() const;
 
 protected:
 	void SetStance(const FGameplayTag& NewStance);
+
+	void Stand(EGMC_CollisionShape CurrentCollisionShape, float DeltaSeconds);
+	void Crouch(EGMC_CollisionShape CurrentCollisionShape, float DeltaSeconds);
 
 	UFUNCTION(BlueprintNativeEvent, Category = "Als Character")
 	void OnStanceChanged(const FGameplayTag& PreviousStance);
@@ -472,7 +378,7 @@ protected:
 	void OnGaitChanged(const FGameplayTag& PreviousGait);
 
 private:
-	void RefreshGait();
+	void ApplyDesiredGait(const FGameplayTag& GaitToApply, float DeltaSeconds);
 
 	FGameplayTag CalculateMaxAllowedGait() const;
 
@@ -488,9 +394,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "ALS|Character", Meta = (AutoCreateRefTerm = "NewOverlayMode"))
 	void SetOverlayMode(const FGameplayTag& NewOverlayMode);
 
-private:
-	void SetOverlayMode(const FGameplayTag& NewOverlayMode, bool bSendRpc);
-
 protected:
 	UFUNCTION(BlueprintNativeEvent, Category = "Als Character")
 	void OnOverlayModeChanged(const FGameplayTag& PreviousOverlayMode);
@@ -503,25 +406,15 @@ public:
 	void SetLocomotionAction(const FGameplayTag& NewLocomotionAction);
 
 protected:
-	virtual void NotifyLocomotionActionChanged(const FGameplayTag& PreviousLocomotionAction);
-
-	UFUNCTION(BlueprintImplementableEvent, Category = "Als Character")
+	UFUNCTION(BlueprintNativeEvent, Category = "Als Character")
 	void OnLocomotionActionChanged(const FGameplayTag& PreviousLocomotionAction);
 
 		// Input
 
-public:
-	const FVector& GetInputDirection() const;
-
 protected:
-	void SetInputDirection(FVector NewInputDirection);
-
 	virtual void RefreshInput(float DeltaTime);
 
 	// View
-
-public:
-	virtual FRotator GetViewRotation() const override;
 
 public:
 	const FAlsViewState& GetViewState() const;
@@ -548,9 +441,17 @@ private:
 	// Jumping
 
 public:
-	virtual void Jump() override;
+	void Jump();
 
-	virtual void OnJumped_Implementation() override;
+	bool CanJump() const;
+
+	virtual void OnJumped_Implementation();
+
+protected:
+	virtual void ApplyDesiredJump(bool bRequestedJump, float DeltaSeconds);
+	
+	virtual void ApplyDesiredJump_Simulated(bool bRequestedJump, float DeltaSeconds);
+
 	
 	// Rotation
 
@@ -582,7 +483,7 @@ protected:
 
 	void SetRotationExtraSmooth(float TargetYawAngle, float DeltaTime, float InterpolationSpeed, float TargetYawAngleRotationSpeed);
 
-	void SetRotationInstant(float TargetYawAngle, ETeleportType Teleport = ETeleportType::None);
+	void SetRotationInstant(float TargetYawAngle);
 
 	void RefreshTargetYawAngleUsingLocomotionRotation();
 
@@ -594,99 +495,99 @@ protected:
 
 	// Rolling
 
-public:
-	UFUNCTION(BlueprintCallable, Category = "ALS|Character")
-	void StartRolling(float PlayRate = 1.0f);
-
-	UFUNCTION(BlueprintNativeEvent, Category = "Als Character")
-	UAnimMontage* SelectRollMontage();
-
-	bool IsRollingAllowedToStart(const UAnimMontage* Montage) const;
-
-private:
-	void StartRolling(float PlayRate, float TargetYawAngle);
-	
-	void StartRollingImplementation(UAnimMontage* Montage, float PlayRate, float InitialYawAngle, float TargetYawAngle);
-
-	void RefreshRolling(float DeltaTime);
-
-	void RefreshRollingPhysics(float DeltaTime);
-
-	// Mantling
-
-public:
-	UFUNCTION(BlueprintNativeEvent, Category = "Als Character")
-	bool IsMantlingAllowedToStart() const;
-
-	UFUNCTION(BlueprintCallable, Category = "ALS|Character", Meta = (ReturnDisplayName = "Success"))
-	bool StartMantlingGrounded();
-
-private:
-	bool StartMantlingInAir();
-
-	bool StartMantling(const FAlsMantlingTraceSettings& TraceSettings);
-
-	void StartMantlingImplementation(const FAlsMantlingParameters& Parameters);
-
-protected:
-	UFUNCTION(BlueprintNativeEvent, Category = "Als Character")
-	UAlsMantlingSettings* SelectMantlingSettings(EAlsMantlingType MantlingType);
-
-	float CalculateMantlingStartTime(const UAlsMantlingSettings* MantlingSettings, float MantlingHeight) const;
-
-	UFUNCTION(BlueprintNativeEvent, Category = "Als Character")
-	void OnMantlingStarted(const FAlsMantlingParameters& Parameters);
-
-private:
-	void RefreshMantling();
-
-	void StopMantling(bool bStopMontage = false);
-
-protected:
-	UFUNCTION(BlueprintNativeEvent, Category = "Als Character")
-	void OnMantlingEnded();
+// public:
+// 	UFUNCTION(BlueprintCallable, Category = "ALS|Character")
+// 	void StartRolling(float PlayRate = 1.0f);
+//
+// 	UFUNCTION(BlueprintNativeEvent, Category = "Als Character")
+// 	UAnimMontage* SelectRollMontage();
+//
+// 	bool IsRollingAllowedToStart(const UAnimMontage* Montage) const;
+//
+// private:
+// 	void StartRolling(float PlayRate, float TargetYawAngle);
+// 	
+// 	void StartRollingImplementation(UAnimMontage* Montage, float PlayRate, float InitialYawAngle, float TargetYawAngle);
+//
+// 	void RefreshRolling(float DeltaTime);
+//
+// 	void RefreshRollingPhysics(float DeltaTime);
+//
+// 	// Mantling
+//
+// public:
+// 	UFUNCTION(BlueprintNativeEvent, Category = "Als Character")
+// 	bool IsMantlingAllowedToStart() const;
+//
+// 	UFUNCTION(BlueprintCallable, Category = "ALS|Character", Meta = (ReturnDisplayName = "Success"))
+// 	bool StartMantlingGrounded();
+//
+// private:
+// 	bool StartMantlingInAir();
+//
+// 	bool StartMantling(const FAlsMantlingTraceSettings& TraceSettings);
+//
+// 	void StartMantlingImplementation(const FAlsMantlingParameters& Parameters);
+//
+// protected:
+// 	UFUNCTION(BlueprintNativeEvent, Category = "Als Character")
+// 	UAlsMantlingSettings* SelectMantlingSettings(EAlsMantlingType MantlingType);
+//
+// 	float CalculateMantlingStartTime(const UAlsMantlingSettings* MantlingSettings, float MantlingHeight) const;
+//
+// 	UFUNCTION(BlueprintNativeEvent, Category = "Als Character")
+// 	void OnMantlingStarted(const FAlsMantlingParameters& Parameters);
+//
+// private:
+// 	void RefreshMantling();
+//
+// 	void StopMantling(bool bStopMontage = false);
+//
+// protected:
+// 	UFUNCTION(BlueprintNativeEvent, Category = "Als Character")
+// 	void OnMantlingEnded();
 
 	// Ragdolling
 
-public:
-	const FAlsRagdollingState& GetRagdollingState() const;
-
-	bool IsRagdollingAllowedToStart() const;
-
-	UFUNCTION(BlueprintCallable, Category = "ALS|Character")
-	void StartRagdolling();
-
-private:
-	void StartRagdollingImplementation();
-
-protected:
-	UFUNCTION(BlueprintNativeEvent, Category = "Als Character")
-	void OnRagdollingStarted();
-
-public:
-	bool IsRagdollingAllowedToStop() const;
-
-	UFUNCTION(BlueprintCallable, Category = "ALS|Character", Meta = (ReturnDisplayName = "Success"))
-	bool StopRagdolling();
-
-private:
-	void StopRagdollingImplementation();
-
-protected:
-	UFUNCTION(BlueprintNativeEvent, Category = "Als Character")
-	UAnimMontage* SelectGetUpMontage(bool bRagdollFacingUpward);
-
-	UFUNCTION(BlueprintNativeEvent, Category = "Als Character")
-	void OnRagdollingEnded();
-
-private:
-	void SetRagdollTargetLocation(const FVector& NewTargetLocation);
-
-	void RefreshRagdolling(float DeltaTime);
-
-	FVector RagdollTraceGround(bool& bGrounded) const;
-
-	void ConstraintRagdollSpeed() const;
+// public:
+// 	const FAlsRagdollingState& GetRagdollingState() const;
+//
+// 	bool IsRagdollingAllowedToStart() const;
+//
+// 	UFUNCTION(BlueprintCallable, Category = "ALS|Character")
+// 	void StartRagdolling();
+//
+// private:
+// 	void StartRagdollingImplementation();
+//
+// // protected:
+// // 	UFUNCTION(BlueprintNativeEvent, Category = "Als Character")
+// // 	void OnRagdollingStarted();
+//
+// public:
+// 	bool IsRagdollingAllowedToStop() const;
+//
+// 	UFUNCTION(BlueprintCallable, Category = "ALS|Character", Meta = (ReturnDisplayName = "Success"))
+// 	bool StopRagdolling();
+//
+// private:
+// 	void StopRagdollingImplementation();
+//
+// protected:
+// 	UFUNCTION(BlueprintNativeEvent, Category = "Als Character")
+// 	UAnimMontage* SelectGetUpMontage(bool bRagdollFacingUpward);
+//
+// 	// UFUNCTION(BlueprintNativeEvent, Category = "Als Character")
+// 	// void OnRagdollingEnded();
+//
+// private:
+// 	void SetRagdollTargetLocation(const FVector& NewTargetLocation);
+//
+// 	void RefreshRagdolling(float DeltaTime);
+//
+// 	FVector RagdollTraceGround(bool& bGrounded) const;
+//
+// 	void ConstraintRagdollSpeed() const;
 };
 
 
@@ -705,11 +606,6 @@ inline const FGameplayTag& UAlsCharacterMovementComponent::GetStance() const
 	return Stance;
 }
 
-inline const FGameplayTag& UAlsCharacterMovementComponent::GetMaxAllowedGait() const
-{
-	return MaxAllowedGait;
-}
-
 inline void UAlsCharacterMovementComponent::SetMaxAllowedGait(const FGameplayTag& NewMaxAllowedGait)
 {
 	MaxAllowedGait = NewMaxAllowedGait;
@@ -719,3 +615,64 @@ inline float UAlsCharacterMovementComponent::GetGaitAmount() const
 {
 	return GaitAmount;
 }
+
+inline const FGameplayTag& UAlsCharacterMovementComponent::GetMaxAllowedGait() const
+{
+	return MaxAllowedGait;
+}
+
+inline const FGameplayTag& UAlsCharacterMovementComponent::GetViewMode() const
+{
+	return ViewMode;
+}
+
+inline bool UAlsCharacterMovementComponent::IsDesiredAiming() const
+{
+	return bDesiredAiming;
+}
+
+inline const FGameplayTag& UAlsCharacterMovementComponent::GetDesiredRotationMode() const
+{
+	return DesiredRotationMode;
+}
+
+
+inline const FGameplayTag& UAlsCharacterMovementComponent::GetDesiredStance() const
+{
+	return DesiredStance;
+}
+
+inline const FGameplayTag& UAlsCharacterMovementComponent::GetDesiredGait() const
+{
+	return DesiredGait;
+}
+
+inline const FGameplayTag& UAlsCharacterMovementComponent::GetGait() const
+{
+	return Gait;
+}
+
+inline const FGameplayTag& UAlsCharacterMovementComponent::GetOverlayMode() const
+{
+	return OverlayMode;
+}
+
+inline const FGameplayTag& UAlsCharacterMovementComponent::GetLocomotionAction() const
+{
+	return LocomotionAction;
+}
+
+inline const FAlsViewState& UAlsCharacterMovementComponent::GetViewState() const
+{
+	return ViewState;
+}
+
+inline const FAlsLocomotionState& UAlsCharacterMovementComponent::GetLocomotionState() const
+{
+	return LocomotionState;
+}
+
+// inline const FAlsRagdollingState& UAlsCharacterMovementComponent::GetRagdollingState() const
+// {
+// 	return RagdollingState;
+// }

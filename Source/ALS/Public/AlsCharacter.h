@@ -26,12 +26,12 @@ class ALS_API AAlsCharacter : public AGMC_Pawn
 
 protected:
 	//Taken from Character.h
-	UPROPERTY(Category=Character, VisibleAnywhere, BlueprintReadOnly, Category = "ACharacter",
+	UPROPERTY(Category=Character, VisibleAnywhere, BlueprintReadOnly, Category = "Character",
 		meta=(AllowPrivateAccess = "true"))
 	TObjectPtr<USkeletalMeshComponent> Mesh;
 
 	//Taken from Character.h
-	UPROPERTY(Category=Character, VisibleAnywhere, BlueprintReadOnly, Category = "ACharacter",
+	UPROPERTY(Category=Character, VisibleAnywhere, BlueprintReadOnly, Category = "Character",
 		meta=(AllowPrivateAccess = "true"))
 	TObjectPtr<UCapsuleComponent> CapsuleComponent;
 	
@@ -67,6 +67,9 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	virtual void PossessedBy(AController* NewController) override;
+
+	UFUNCTION(BlueprintNativeEvent, Category = "Als Character")
+	void OnJump();
 
 protected:
 	UFUNCTION(BlueprintNativeEvent, Category = "Als Character", Meta = (ReturnDisplayName = "Handled"))
