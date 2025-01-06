@@ -1,6 +1,6 @@
-#include "AlsCameraAnimationInstance.h"
+#include "Camera/AlsCameraAnimationInstance.h"
 
-#include "AlsCameraComponent.h"
+#include "Camera/AlsCameraComponent.h"
 #include "AlsCharacter.h"
 #include "Engine/World.h"
 

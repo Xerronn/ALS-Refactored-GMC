@@ -1,10 +1,10 @@
-#include "AlsCameraComponent.h"
+#include "Camera/AlsCameraComponent.h"
 
 #include "DisplayDebugHelpers.h"
 #include "Animation/AnimInstance.h"
 #include "Engine/Canvas.h"
 #include "Engine/Engine.h"
-#include "Utility/AlsCameraConstants.h"
+#include "Camera/Utility/AlsCameraConstants.h"
 #include "Utility/AlsUtility.h"
 
 #define LOCTEXT_NAMESPACE "AlsCameraComponentDebug"

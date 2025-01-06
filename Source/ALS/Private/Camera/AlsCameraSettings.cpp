@@ -1,4 +1,4 @@
-﻿#include "AlsCameraSettings.h"
+﻿#include "Camera/AlsCameraSettings.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(AlsCameraSettings)
 

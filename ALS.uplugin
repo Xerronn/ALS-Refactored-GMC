@@ -23,11 +23,6 @@
 			"LoadingPhase": "Default"
 		},
 		{
-			"Name": "ALSCamera",
-			"Type": "Runtime",
-			"LoadingPhase": "Default"
-		},
-		{
 			"Name": "ALSExtras",
 			"Type": "Runtime",
 			"LoadingPhase": "Default"
