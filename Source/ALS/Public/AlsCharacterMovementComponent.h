@@ -86,7 +86,7 @@ protected:
 	TObjectPtr<UAlsMovementSettings> MovementSettings;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings|Als Character|Desired State")
-	uint8 bDesiredAiming : 1 {false};
+	bool bDesiredAiming{false};
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings|Als Character|Desired State")
 	bool bDesiredJumping{false};
@@ -124,11 +124,6 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State|Als Character", Transient)
 	FGameplayTag LocomotionAction;
 
-	// Replicated raw view rotation. Depending on the context, this rotation can be in world space, or in movement
-	// base space. In most cases, it is better to use FAlsViewState::Rotation to take advantage of network smoothing.
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State|Als Character", Transient)
-	FRotator ReplicatedViewRotation{ForceInit};
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State|Als Character", Transient)
 	FAlsViewState ViewState;
 
@@ -136,7 +131,7 @@ protected:
 	FVector_NetQuantizeNormal InputDirection{ForceInit};
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State|Als Character",
-		Transient, Replicated, Meta = (ClampMin = -180, ClampMax = 180, ForceUnits = "deg"))
+		Transient, Meta = (ClampMin = -180, ClampMax = 180, ForceUnits = "deg"))
 	float DesiredVelocityYawAngle{0.0f};
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State|Als Character", Transient)
@@ -441,11 +436,11 @@ private:
 	// Jumping
 
 public:
-	void Jump();
 
 	bool CanJump() const;
-
-	virtual void OnJumped_Implementation();
+	
+	UFUNCTION(BlueprintNativeEvent, Category = "Als Character")
+	void OnJumped();
 
 protected:
 	virtual void ApplyDesiredJump(bool bRequestedJump, float DeltaSeconds);
@@ -549,8 +544,8 @@ protected:
 
 	// Ragdolling
 
-// public:
-// 	const FAlsRagdollingState& GetRagdollingState() const;
+public:
+	const FAlsRagdollingState& GetRagdollingState() const;
 //
 // 	bool IsRagdollingAllowedToStart() const;
 //
@@ -672,7 +667,7 @@ inline const FAlsLocomotionState& UAlsCharacterMovementComponent::GetLocomotionS
 	return LocomotionState;
 }
 
-// inline const FAlsRagdollingState& UAlsCharacterMovementComponent::GetRagdollingState() const
-// {
-// 	return RagdollingState;
-// }
+inline const FAlsRagdollingState& UAlsCharacterMovementComponent::GetRagdollingState() const
+{
+	return RagdollingState;
+}

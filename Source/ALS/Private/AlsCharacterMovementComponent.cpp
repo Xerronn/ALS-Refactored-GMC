@@ -103,7 +103,7 @@ void UAlsCharacterMovementComponent::BindReplicationData_Implementation()
 		EGMC_InterpolationFunction::NearestNeighbour
 	);
 
-	BindByte(
+	BindBool(
 		bDesiredAiming,
 		EGMC_PredictionMode::ClientAuth_Input,
 		EGMC_CombineMode::CombineIfUnchanged,
@@ -572,6 +572,8 @@ void UAlsCharacterMovementComponent::SetRotationMode(const FGameplayTag& NewRota
 
 		RotationMode = NewRotationMode;
 
+		LocomotionState.bRotationTowardsLastInputDirectionBlocked = true;
+		
 		OnRotationModeChanged(PreviousRotationMode);
 	}
 }
@@ -803,7 +805,7 @@ FGameplayTag UAlsCharacterMovementComponent::CalculateMaxAllowedGait() const
 	return AlsGaitTags::Running;
 }
 
-FGameplayTag UAlsCharacterMovementComponent::CalculateActualGait(const FGameplayTag& MaxAllowedGait) const
+FGameplayTag UAlsCharacterMovementComponent::CalculateActualGait(const FGameplayTag& NewMaxAllowedGait) const
 {
 	// Calculate the new gait. This is calculated by the actual movement of the character and so it can be
 	// different from the desired gait or max allowed gait. For instance, if the max allowed gait becomes
@@ -814,7 +816,7 @@ FGameplayTag UAlsCharacterMovementComponent::CalculateActualGait(const FGameplay
 		return AlsGaitTags::Walking;
 	}
 
-	if (LocomotionState.Speed < GaitSettings.GetMaxRunSpeed() + 10.0f || MaxAllowedGait != AlsGaitTags::Sprinting)
+	if (LocomotionState.Speed < GaitSettings.GetMaxRunSpeed() + 10.0f || NewMaxAllowedGait != AlsGaitTags::Sprinting)
 	{
 		return AlsGaitTags::Running;
 	}
@@ -881,6 +883,29 @@ void UAlsCharacterMovementComponent::SetLocomotionAction(const FGameplayTag& New
 
 void UAlsCharacterMovementComponent::OnLocomotionActionChanged_Implementation(const FGameplayTag& PreviousLocomotionAction) {}
 
+FVector UAlsCharacterMovementComponent::PreProcessInputVector_Implementation(FVector InRawInputVector)
+{
+	if (LocomotionAction.IsValid())
+	{
+		InRawInputVector = FVector(0.f, 0.f, 0.f);
+	}
+	return Super::PreProcessInputVector_Implementation(InRawInputVector);
+}
+
+//basically overridden to use ViewState.Rotation instead of the ControlRotation, so I have control over when
+FVector UAlsCharacterMovementComponent::TransformInputVectorAbsoluteZ(const FVector& AbsoluteInputVector) const
+{
+	if (!IsValid(PawnOwner) || AbsoluteInputVector.IsZero())
+	{
+		return FVector{0.};
+	}
+
+	FRotator ControlRotation = ViewState.Rotation;
+	ControlRotation.Pitch = 0.;
+	const FVector InputVectorAbsoluteZ = ControlRotation.RotateVector(AbsoluteInputVector);
+	return {InputVectorAbsoluteZ.X, InputVectorAbsoluteZ.Y, AbsoluteInputVector.Z};
+}
+
 void UAlsCharacterMovementComponent::RefreshInput(const float DeltaTime)
 {
 	if (GetOwnerRole() >= ROLE_AutonomousProxy)
@@ -926,6 +951,16 @@ void UAlsCharacterMovementComponent::RefreshLocomotionLocationAndRotation()
 
 void UAlsCharacterMovementComponent::RefreshLocomotionEarly()
 {
+	if (!LocomotionState.bMoving &&
+	RotationMode == AlsRotationModeTags::VelocityDirection &&
+	Settings->bInheritMovementBaseRotationInVelocityDirectionRotationMode)
+	{
+		DesiredVelocityYawAngle = FMath::UnwindDegrees(UE_REAL_TO_FLOAT(
+			DesiredVelocityYawAngle));
+		LocomotionState.VelocityYawAngle = FMath::UnwindDegrees(UE_REAL_TO_FLOAT(
+			LocomotionState.VelocityYawAngle));
+	}
+	
 	RefreshLocomotionLocationAndRotation();
 
 	LocomotionState.PreviousVelocity = LocomotionState.Velocity;
@@ -972,12 +1007,6 @@ void UAlsCharacterMovementComponent::RefreshLocomotionLate()
 	LocomotionState.bResetAimingLimit = !LocomotionState.bAimingLimitAppliedThisFrame;
 }
 
-bool UAlsCharacterMovementComponent::CanJump() const
-{
-	return bCanJump && Stance == AlsStanceTags::Standing && IsMovingOnGround();
-
-}
-
 void UAlsCharacterMovementComponent::ApplyDesiredJump(bool bRequestedJump, float DeltaSeconds)
 {
 	if (bRequestedJump && CanJump())
@@ -986,6 +1015,9 @@ void UAlsCharacterMovementComponent::ApplyDesiredJump(bool bRequestedJump, float
 		CharacterOwner->OnJump();
 		bCanJump = false;
 		bJustJumped = true;
+		
+		OnJumped_Implementation();
+		
 		return;
 	}
 	bCanJump = true;
@@ -995,6 +1027,8 @@ void UAlsCharacterMovementComponent::ApplyDesiredJump_Simulated(bool bPerformedJ
 {
 	if (bPerformedJump) CharacterOwner->OnJump();
 }
+
+void UAlsCharacterMovementComponent::OnJumped_Implementation() {}
 
 void UAlsCharacterMovementComponent::RefreshGroundedRotation(const float DeltaTime)
 {
@@ -1007,14 +1041,6 @@ void UAlsCharacterMovementComponent::RefreshGroundedRotation(const float DeltaTi
 	{
 		RefreshTargetYawAngleUsingLocomotionRotation();
 		return;
-	}
-
-	if (RotationMode != AlsRotationModeTags::VelocityDirection)
-	{
-		// This prevents the actor from rotating in the last input direction after the rotation mode
-		// has been changed to the velocity direction and the actor is not moving at that moment.
-
-		LocomotionState.bRotationTowardsLastInputDirectionBlocked = true;
 	}
 
 	if (!LocomotionState.bMoving)
@@ -1032,17 +1058,40 @@ void UAlsCharacterMovementComponent::RefreshGroundedRotation(const float DeltaTi
 		{
 			// Rotate to the last target yaw angle when not moving (relative to the movement base or not).
 
-			auto TargetYawAngle{
-				LocomotionState.bRotationTowardsLastInputDirectionBlocked
-					? LocomotionState.TargetYawAngle
-					: Settings->bRotateTowardsDesiredVelocityInVelocityDirectionRotationMode
-					? DesiredVelocityYawAngle
-					: LocomotionState.VelocityYawAngle
-			};
+			float TargetYawAngle;
+			if (LocomotionState.bRotationTowardsLastInputDirectionBlocked)
+			{
+				// Rotate to the last target yaw angle, relative to the movement base or not.
+				TargetYawAngle = LocomotionState.TargetYawAngle;
+			}
+			else
+			{
+				// Rotate to the last velocity direction. Rotation of the movement
+				// base handled in the AAlsCharacter::RefreshLocomotionEarly() function.
+				TargetYawAngle = Settings->bRotateTowardsDesiredVelocityInVelocityDirectionRotationMode
+									 ? DesiredVelocityYawAngle
+									 : LocomotionState.VelocityYawAngle;
+			}
 
 			static constexpr auto RotationInterpolationSpeed{12.0f};
 			static constexpr auto TargetYawAngleRotationSpeed{800.0f};
 
+			SetRotationExtraSmooth(TargetYawAngle, DeltaTime, RotationInterpolationSpeed, TargetYawAngleRotationSpeed);
+			return;
+		}
+
+		if (RotationMode == AlsRotationModeTags::ViewDirection)
+		{
+			if ((!LocomotionState.bHasInput && LocomotionState.bRotationTowardsLastInputDirectionBlocked) ||
+				!Settings->bAutoRotateOnAnyInputWhileNotMovingInViewDirectionRotationMode)
+			{
+				RefreshTargetYawAngleUsingLocomotionRotation();
+				return;
+			}
+			// Rotate to the last view direction.
+			const auto TargetYawAngle{LocomotionState.bHasInput ? ViewState.Rotation.Yaw : LocomotionState.TargetYawAngle};
+			const auto RotationInterpolationSpeed{CalculateGroundedMovingRotationInterpolationSpeed()};
+			static constexpr auto TargetYawAngleRotationSpeed{500.0f};
 			SetRotationExtraSmooth(TargetYawAngle, DeltaTime, RotationInterpolationSpeed, TargetYawAngleRotationSpeed);
 			return;
 		}
@@ -1083,8 +1132,10 @@ void UAlsCharacterMovementComponent::RefreshGroundedRotation(const float DeltaTi
 		return;
 	}
 
-	if (RotationMode == AlsRotationModeTags::ViewDirection)
+	if (RotationMode == AlsRotationModeTags::ViewDirection &&
+	(LocomotionState.bHasInput || !LocomotionState.bRotationTowardsLastInputDirectionBlocked))
 	{
+		LocomotionState.bRotationTowardsLastInputDirectionBlocked = false;
 		float TargetYawAngle;
 
 		if (Gait == AlsGaitTags::Sprinting)
@@ -1238,8 +1289,8 @@ float UAlsCharacterMovementComponent::CalculateGroundedMovingRotationInterpolati
 
 	const auto InterpolationSpeed{
 		ALS_ENSURE(IsValid(InterpolationSpeedCurve))
-			? InterpolationSpeedCurve->GetFloatValue(GetGaitAmount())
-			: DefaultInterpolationSpeed
+				? InterpolationSpeedCurve->GetFloatValue(FMath::Max(1.0f, GetGaitAmount()))
+				: DefaultInterpolationSpeed
 	};
 
 	static constexpr auto MaxInterpolationSpeedMultiplier{3.0f};

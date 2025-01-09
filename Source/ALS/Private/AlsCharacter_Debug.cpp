@@ -219,13 +219,13 @@ void AAlsCharacter::DisplayDebugState(const UCanvas* Canvas, const float Scale,
 
 	static const auto ViewModeText{
 		FText::AsCultureInvariant(FName::NameToDisplayString(
-			FString{GET_MEMBER_NAME_STRING_VIEW_CHECKED(ThisClass, GetViewMode())}, false))
+			FString{GET_MEMBER_NAME_STRING_VIEW_CHECKED(ThisClass, GetCharacterMovement()->GetViewMode())}, false))
 	};
 
 	Text.Text = ViewModeText;
 	Text.Draw(Canvas->Canvas, {HorizontalLocation, VerticalLocation});
 
-	Text.Text = FText::AsCultureInvariant(FName::NameToDisplayString(UAlsUtility::GetSimpleTagName(GetViewMode()).ToString(), false));
+	Text.Text = FText::AsCultureInvariant(FName::NameToDisplayString(UAlsUtility::GetSimpleTagName(GetCharacterMovement()->GetViewMode()).ToString(), false));
 	Text.Draw(Canvas->Canvas, {HorizontalLocation + ColumnOffset, VerticalLocation});
 
 	VerticalLocation += RowOffset;
@@ -245,118 +245,118 @@ void AAlsCharacter::DisplayDebugState(const UCanvas* Canvas, const float Scale,
 
 	static const auto DesiredAimingText{
 		FText::AsCultureInvariant(FName::NameToDisplayString(
-			FString{GET_MEMBER_NAME_STRING_VIEW_CHECKED(ThisClass, IsDesiredAiming())}, true))
+			FString{GET_MEMBER_NAME_STRING_VIEW_CHECKED(ThisClass, GetCharacterMovement()->IsDesiredAiming())}, true))
 	};
 
 	Text.Text = DesiredAimingText;
 	Text.Draw(Canvas->Canvas, {HorizontalLocation, VerticalLocation});
 
-	Text.Text = FText::AsCultureInvariant(FName::NameToDisplayString(FString{UAlsUtility::BoolToString(IsDesiredAiming())}, false));
+	Text.Text = FText::AsCultureInvariant(FName::NameToDisplayString(FString{UAlsUtility::BoolToString(GetCharacterMovement()->IsDesiredAiming())}, false));
 	Text.Draw(Canvas->Canvas, {HorizontalLocation + ColumnOffset, VerticalLocation});
 
 	VerticalLocation += RowOffset;
 
 	static const auto DesiredRotationModeText{
 		FText::AsCultureInvariant(FName::NameToDisplayString(
-			FString{GET_MEMBER_NAME_STRING_VIEW_CHECKED(ThisClass, GetDesiredRotationMode())}, false))
+			FString{GET_MEMBER_NAME_STRING_VIEW_CHECKED(ThisClass, GetCharacterMovement()->GetDesiredRotationMode())}, false))
 	};
 
 	Text.Text = DesiredRotationModeText;
 	Text.Draw(Canvas->Canvas, {HorizontalLocation, VerticalLocation});
 
 	Text.Text = FText::AsCultureInvariant(
-		FName::NameToDisplayString(UAlsUtility::GetSimpleTagName(GetDesiredRotationMode()).ToString(), false));
+		FName::NameToDisplayString(UAlsUtility::GetSimpleTagName(GetCharacterMovement()->GetDesiredRotationMode()).ToString(), false));
 	Text.Draw(Canvas->Canvas, {HorizontalLocation + ColumnOffset, VerticalLocation});
 
 	VerticalLocation += RowOffset;
 
 	static const auto RotationModeText{
 		FText::AsCultureInvariant(FName::NameToDisplayString(
-			FString{GET_MEMBER_NAME_STRING_VIEW_CHECKED(ThisClass, GetRotationMode())}, false))
+			FString{GET_MEMBER_NAME_STRING_VIEW_CHECKED(ThisClass, GetCharacterMovement()->GetRotationMode())}, false))
 	};
 
 	Text.Text = RotationModeText;
 	Text.Draw(Canvas->Canvas, {HorizontalLocation, VerticalLocation});
 
-	Text.Text = FText::AsCultureInvariant(FName::NameToDisplayString(UAlsUtility::GetSimpleTagName(GetRotationMode()).ToString(), false));
+	Text.Text = FText::AsCultureInvariant(FName::NameToDisplayString(UAlsUtility::GetSimpleTagName(GetCharacterMovement()->GetRotationMode()).ToString(), false));
 	Text.Draw(Canvas->Canvas, {HorizontalLocation + ColumnOffset, VerticalLocation});
 
 	VerticalLocation += RowOffset;
 
 	static const auto DesiredStanceText{
 		FText::AsCultureInvariant(FName::NameToDisplayString(
-			FString{GET_MEMBER_NAME_STRING_VIEW_CHECKED(ThisClass, GetDesiredStance())}, false))
+			FString{GET_MEMBER_NAME_STRING_VIEW_CHECKED(ThisClass, GetCharacterMovement()->GetDesiredStance())}, false))
 	};
 
 	Text.Text = DesiredStanceText;
 	Text.Draw(Canvas->Canvas, {HorizontalLocation, VerticalLocation});
 
-	Text.Text = FText::AsCultureInvariant(FName::NameToDisplayString(UAlsUtility::GetSimpleTagName(GetDesiredStance()).ToString(), false));
+	Text.Text = FText::AsCultureInvariant(FName::NameToDisplayString(UAlsUtility::GetSimpleTagName(GetCharacterMovement()->GetDesiredStance()).ToString(), false));
 	Text.Draw(Canvas->Canvas, {HorizontalLocation + ColumnOffset, VerticalLocation});
 
 	VerticalLocation += RowOffset;
 
 	static const auto StanceText{
 		FText::AsCultureInvariant(FName::NameToDisplayString(
-			FString{GET_MEMBER_NAME_STRING_VIEW_CHECKED(ThisClass, GetStance())}, false))
+			FString{GET_MEMBER_NAME_STRING_VIEW_CHECKED(ThisClass, GetCharacterMovement()->GetStance())}, false))
 	};
 
 	Text.Text = StanceText;
 	Text.Draw(Canvas->Canvas, {HorizontalLocation, VerticalLocation});
 
-	Text.Text = FText::AsCultureInvariant(FName::NameToDisplayString(UAlsUtility::GetSimpleTagName(GetStance()).ToString(), false));
+	Text.Text = FText::AsCultureInvariant(FName::NameToDisplayString(UAlsUtility::GetSimpleTagName(GetCharacterMovement()->GetStance()).ToString(), false));
 	Text.Draw(Canvas->Canvas, {HorizontalLocation + ColumnOffset, VerticalLocation});
 
 	VerticalLocation += RowOffset;
 
 	static const auto DesiredGaitText{
 		FText::AsCultureInvariant(FName::NameToDisplayString(
-			FString{GET_MEMBER_NAME_STRING_VIEW_CHECKED(ThisClass, GetDesiredGait())}, false))
+			FString{GET_MEMBER_NAME_STRING_VIEW_CHECKED(ThisClass, GetCharacterMovement()->GetDesiredGait())}, false))
 	};
 
 	Text.Text = DesiredGaitText;
 	Text.Draw(Canvas->Canvas, {HorizontalLocation, VerticalLocation});
 
-	Text.Text = FText::AsCultureInvariant(FName::NameToDisplayString(UAlsUtility::GetSimpleTagName(GetDesiredGait()).ToString(), false));
+	Text.Text = FText::AsCultureInvariant(FName::NameToDisplayString(UAlsUtility::GetSimpleTagName(GetCharacterMovement()->GetDesiredGait()).ToString(), false));
 	Text.Draw(Canvas->Canvas, {HorizontalLocation + ColumnOffset, VerticalLocation});
 
 	VerticalLocation += RowOffset;
 
 	static const auto GaitText{
 		FText::AsCultureInvariant(FName::NameToDisplayString(
-			FString{GET_MEMBER_NAME_STRING_VIEW_CHECKED(ThisClass, GetGait())}, false))
+			FString{GET_MEMBER_NAME_STRING_VIEW_CHECKED(ThisClass, GetCharacterMovement()->GetGait())}, false))
 	};
 
 	Text.Text = GaitText;
 	Text.Draw(Canvas->Canvas, {HorizontalLocation, VerticalLocation});
 
-	Text.Text = FText::AsCultureInvariant(FName::NameToDisplayString(UAlsUtility::GetSimpleTagName(GetGait()).ToString(), false));
+	Text.Text = FText::AsCultureInvariant(FName::NameToDisplayString(UAlsUtility::GetSimpleTagName(GetCharacterMovement()->GetGait()).ToString(), false));
 	Text.Draw(Canvas->Canvas, {HorizontalLocation + ColumnOffset, VerticalLocation});
 
 	VerticalLocation += RowOffset;
 
 	static const auto OverlayModeText{
 		FText::AsCultureInvariant(FName::NameToDisplayString(
-			FString{GET_MEMBER_NAME_STRING_VIEW_CHECKED(ThisClass, GetOverlayMode())}, false))
+			FString{GET_MEMBER_NAME_STRING_VIEW_CHECKED(ThisClass, GetCharacterMovement()->GetOverlayMode())}, false))
 	};
 
 	Text.Text = OverlayModeText;
 	Text.Draw(Canvas->Canvas, {HorizontalLocation, VerticalLocation});
 
-	Text.Text = FText::AsCultureInvariant(FName::NameToDisplayString(UAlsUtility::GetSimpleTagName(GetOverlayMode()).ToString(), false));
+	Text.Text = FText::AsCultureInvariant(FName::NameToDisplayString(UAlsUtility::GetSimpleTagName(GetCharacterMovement()->GetOverlayMode()).ToString(), false));
 	Text.Draw(Canvas->Canvas, {HorizontalLocation + ColumnOffset, VerticalLocation});
 
 	VerticalLocation += RowOffset;
 
 	static const auto LocomotionActionText{
 		FText::AsCultureInvariant(FName::NameToDisplayString(
-			FString{GET_MEMBER_NAME_STRING_VIEW_CHECKED(ThisClass, GetLocomotionAction())}, false))
+			FString{GET_MEMBER_NAME_STRING_VIEW_CHECKED(ThisClass, GetCharacterMovement()->GetLocomotionAction())}, false))
 	};
 
 	Text.Text = LocomotionActionText;
 	Text.Draw(Canvas->Canvas, {HorizontalLocation, VerticalLocation});
 
-	Text.Text = FText::AsCultureInvariant(FName::NameToDisplayString(UAlsUtility::GetSimpleTagName(GetLocomotionAction()).ToString(), false));
+	Text.Text = FText::AsCultureInvariant(FName::NameToDisplayString(UAlsUtility::GetSimpleTagName(GetCharacterMovement()->GetLocomotionAction()).ToString(), false));
 	Text.Draw(Canvas->Canvas, {HorizontalLocation + ColumnOffset, VerticalLocation});
 
 	VerticalLocation += RowOffset;
@@ -394,11 +394,11 @@ void AAlsCharacter::DisplayDebugShapes(const UCanvas* Canvas, const float Scale,
 	Text.Draw(Canvas->Canvas, {HorizontalLocation, VerticalLocation});
 
 	DebugStringBuilder << TEXTVIEW("R: ");
-	DebugStringBuilder.Appendf(TEXT("%.2f"), GetViewState().Rotation.Roll);
+	DebugStringBuilder.Appendf(TEXT("%.2f"), GetCharacterMovement()->GetViewState().Rotation.Roll);
 	DebugStringBuilder << TEXTVIEW("P: ");
-	DebugStringBuilder.Appendf(TEXT("%.2f"), GetViewState().Rotation.Pitch);
+	DebugStringBuilder.Appendf(TEXT("%.2f"), GetCharacterMovement()->GetViewState().Rotation.Pitch);
 	DebugStringBuilder << TEXTVIEW("Y: ");
-	DebugStringBuilder.Appendf(TEXT("%.2f"), GetViewState().Rotation.Yaw);
+	DebugStringBuilder.Appendf(TEXT("%.2f"), GetCharacterMovement()->GetViewState().Rotation.Yaw);
 
 	Text.Text = FText::AsCultureInvariant(FString{DebugStringBuilder});
 	Text.Draw(Canvas->Canvas, {HorizontalLocation + ColumnOffset, VerticalLocation});
@@ -407,7 +407,7 @@ void AAlsCharacter::DisplayDebugShapes(const UCanvas* Canvas, const float Scale,
 
 #if ENABLE_DRAW_DEBUG
 	DrawDebugCone(GetWorld(), GetPawnViewLocation(),
-	              GetViewState().Rotation.Vector(), 100.0f, FMath::DegreesToRadians(15.0f), FMath::DegreesToRadians(15.0f),
+	              GetCharacterMovement()->GetViewState().Rotation.Vector(), 100.0f, FMath::DegreesToRadians(15.0f), FMath::DegreesToRadians(15.0f),
 	              8, Color.ToFColor(true), false, -1.0f, SDPG_World, 1.0f);
 #endif
 
@@ -418,13 +418,13 @@ void AAlsCharacter::DisplayDebugShapes(const UCanvas* Canvas, const float Scale,
 			FString{GET_MEMBER_NAME_STRING_VIEW_CHECKED(FAlsLocomotionState, InputYawAngle)}, false))
 	};
 
-	Color = GetLocomotionState().bHasInput ? FLinearColor{1.0f, 0.5f, 0.0f} : FLinearColor{0.5f, 0.25f, 0.0f};
+	Color = GetCharacterMovement()->GetLocomotionState().bHasInput ? FLinearColor{1.0f, 0.5f, 0.0f} : FLinearColor{0.5f, 0.25f, 0.0f};
 	Text.SetColor(Color);
 
 	Text.Text = InputYawAngleText;
 	Text.Draw(Canvas->Canvas, {HorizontalLocation, VerticalLocation});
 
-	DebugStringBuilder.Appendf(TEXT("%.2f"), GetLocomotionState().InputYawAngle);
+	DebugStringBuilder.Appendf(TEXT("%.2f"), GetCharacterMovement()->GetLocomotionState().InputYawAngle);
 
 	Text.Text = FText::AsCultureInvariant(FString{DebugStringBuilder});
 	Text.Draw(Canvas->Canvas, {HorizontalLocation + ColumnOffset, VerticalLocation});
@@ -432,12 +432,12 @@ void AAlsCharacter::DisplayDebugShapes(const UCanvas* Canvas, const float Scale,
 	DebugStringBuilder.Reset();
 
 #if ENABLE_DRAW_DEBUG
-	const auto FeetLocation{GetLocomotionState().Location - FVector{0.0f, 0.0f, GetCapsuleComponent()->GetScaledCapsuleHalfHeight()}};
+	const auto FeetLocation{GetCharacterMovement()->GetLocomotionState().Location - FVector{0.0f, 0.0f, GetCapsuleComponent()->GetScaledCapsuleHalfHeight()}};
 
 	DrawDebugDirectionalArrow(GetWorld(),
 	                          FeetLocation + FVector{0.0f, 0.0f, 3.0f},
 	                          FeetLocation + FVector{0.0f, 0.0f, 3.0f} +
-	                          UAlsVector::AngleToDirectionXY(GetLocomotionState().InputYawAngle) * 50.0f,
+	                          UAlsVector::AngleToDirectionXY(GetCharacterMovement()->GetLocomotionState().InputYawAngle) * 50.0f,
 	                          50.0f, Color.ToFColor(true), false, -1.0f, SDPG_World, 3.0f);
 #endif
 
@@ -448,13 +448,13 @@ void AAlsCharacter::DisplayDebugShapes(const UCanvas* Canvas, const float Scale,
 			FString{GET_MEMBER_NAME_STRING_VIEW_CHECKED(FAlsLocomotionState, Speed)}, false))
 	};
 
-	Color = GetLocomotionState().bHasVelocity ? FLinearColor{0.75f, 0.0f, 1.0f} : FLinearColor{0.375f, 0.0f, 0.5f};
+	Color = GetCharacterMovement()->GetLocomotionState().bHasVelocity ? FLinearColor{0.75f, 0.0f, 1.0f} : FLinearColor{0.375f, 0.0f, 0.5f};
 	Text.SetColor(Color);
 
 	Text.Text = SpeedText;
 	Text.Draw(Canvas->Canvas, {HorizontalLocation, VerticalLocation});
 
-	DebugStringBuilder.Appendf(TEXT("%.2f"), GetLocomotionState().Speed);
+	DebugStringBuilder.Appendf(TEXT("%.2f"), GetCharacterMovement()->GetLocomotionState().Speed);
 
 	Text.Text = FText::AsCultureInvariant(FString{DebugStringBuilder});
 	Text.Draw(Canvas->Canvas, {HorizontalLocation + ColumnOffset, VerticalLocation});
@@ -465,7 +465,7 @@ void AAlsCharacter::DisplayDebugShapes(const UCanvas* Canvas, const float Scale,
 
 	static const auto VelocityDirectionText{FText::AsCultureInvariant(FString{TEXTVIEW("Velocity Direction")})};
 
-	const auto VelocityDirection{GetLocomotionState().Velocity.GetSafeNormal()};
+	const auto VelocityDirection{GetCharacterMovement()->GetLocomotionState().Velocity.GetSafeNormal()};
 
 	Text.Text = VelocityDirectionText;
 	Text.Draw(Canvas->Canvas, {HorizontalLocation, VerticalLocation});
@@ -492,7 +492,7 @@ void AAlsCharacter::DisplayDebugShapes(const UCanvas* Canvas, const float Scale,
 	Text.Text = VelocityYawAngleText;
 	Text.Draw(Canvas->Canvas, {HorizontalLocation, VerticalLocation});
 
-	DebugStringBuilder.Appendf(TEXT("%.2f"), GetLocomotionState().VelocityYawAngle);
+	DebugStringBuilder.Appendf(TEXT("%.2f"), GetCharacterMovement()->GetLocomotionState().VelocityYawAngle);
 
 	Text.Text = FText::AsCultureInvariant(FString{DebugStringBuilder});
 	Text.Draw(Canvas->Canvas, {HorizontalLocation + ColumnOffset, VerticalLocation});
@@ -503,9 +503,9 @@ void AAlsCharacter::DisplayDebugShapes(const UCanvas* Canvas, const float Scale,
 	DrawDebugDirectionalArrow(GetWorld(),
 	                          FeetLocation,
 	                          FeetLocation +
-	                          UAlsVector::AngleToDirectionXY(GetLocomotionState().VelocityYawAngle) *
+	                          UAlsVector::AngleToDirectionXY(GetCharacterMovement()->GetLocomotionState().VelocityYawAngle) *
 	                          FMath::GetMappedRangeValueClamped(FVector2f{0.0f, GetCharacterMovement()->GetMaxSpeed()},
-	                                                            {50.0f, 75.0f}, GetLocomotionState().Speed),
+	                                                            {50.0f, 75.0f}, GetCharacterMovement()->GetLocomotionState().Speed),
 	                          50.0f, Color.ToFColor(true), false, -1.0f, SDPG_World, 3.0f);
 #endif
 
@@ -522,7 +522,7 @@ void AAlsCharacter::DisplayDebugShapes(const UCanvas* Canvas, const float Scale,
 	Text.Text = TargetYawAngleText;
 	Text.Draw(Canvas->Canvas, {HorizontalLocation, VerticalLocation});
 
-	DebugStringBuilder.Appendf(TEXT("%.2f"), GetLocomotionState().SmoothTargetYawAngle);
+	DebugStringBuilder.Appendf(TEXT("%.2f"), GetCharacterMovement()->GetLocomotionState().SmoothTargetYawAngle);
 
 	Text.Text = FText::AsCultureInvariant(FString{DebugStringBuilder});
 	Text.Draw(Canvas->Canvas, {HorizontalLocation + ColumnOffset, VerticalLocation});
@@ -533,15 +533,15 @@ void AAlsCharacter::DisplayDebugShapes(const UCanvas* Canvas, const float Scale,
 	DrawDebugDirectionalArrow(GetWorld(),
 	                          FeetLocation + FVector{0.0f, 0.0f, 6.0f},
 	                          FeetLocation + FVector{0.0f, 0.0f, 6.0f} +
-	                          UAlsVector::AngleToDirectionXY(GetLocomotionState().SmoothTargetYawAngle) * 50.0f,
+	                          UAlsVector::AngleToDirectionXY(GetCharacterMovement()->GetLocomotionState().SmoothTargetYawAngle) * 50.0f,
 	                          50.0f, Color.ToFColor(true), false, -1.0f, SDPG_World, 3.0f);
 #endif
 
 	VerticalLocation += RowOffset;
 
 #if ENABLE_DRAW_DEBUG
-	DrawDebugCapsule(GetWorld(), GetLocomotionState().Location, GetCapsuleComponent()->GetScaledCapsuleHalfHeight(),
-	                 GetCapsuleComponent()->GetScaledCapsuleRadius(), GetLocomotionState().Rotation.Quaternion(),
+	DrawDebugCapsule(GetWorld(), GetCharacterMovement()->GetLocomotionState().Location, GetCapsuleComponent()->GetScaledCapsuleHalfHeight(),
+	                 GetCapsuleComponent()->GetScaledCapsuleRadius(), GetCharacterMovement()->GetLocomotionState().Rotation.Quaternion(),
 	                 FColor::Green, false, -1.0f, SDPG_World, 1.0f);
 #endif
 }

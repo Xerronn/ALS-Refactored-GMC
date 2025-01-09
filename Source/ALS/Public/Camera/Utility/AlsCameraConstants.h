@@ -4,7 +4,7 @@
 #include "AlsCameraConstants.generated.h"
 
 UCLASS(Meta = (BlueprintThreadSafe))
-class ALSCAMERA_API UAlsCameraConstants : public UBlueprintFunctionLibrary
+class ALS_API UAlsCameraConstants : public UBlueprintFunctionLibrary
 {
 	GENERATED_BODY()
 

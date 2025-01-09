@@ -3,6 +3,7 @@
 #include "AlsAnimationInstance.h"
 #include "AlsCharacterMovementComponent.h"
 #include "TimerManager.h"
+#include "Camera/AlsCameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Curves/CurveFloat.h"
@@ -19,11 +20,9 @@
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(AlsCharacter)
 
-namespace AlsCharacterConstants
-{
-	constexpr auto TeleportDistanceThresholdSquared{FMath::Square(50.0f)};
-	constexpr auto MinAimingYawAngleLimit{70.0f};
-}
+FName AAlsCharacter::MeshComponentName(TEXT("Mesh"));
+FName AAlsCharacter::CharacterMovementComponentName(TEXT("CharacterMovement"));
+FName AAlsCharacter::CapsuleComponentName(TEXT("CapsuleComponent"));
 
 AAlsCharacter::AAlsCharacter(const FObjectInitializer& ObjectInitializer) : Super{
 	ObjectInitializer.SetDefaultSubobjectClass<UAlsCharacterMovementComponent>(CharacterMovementComponentName)
@@ -34,12 +33,14 @@ AAlsCharacter::AAlsCharacter(const FObjectInitializer& ObjectInitializer) : Supe
 	bUseControllerRotationYaw = false;
 	
 	CapsuleComponent = CreateDefaultSubobject<UCapsuleComponent>(CapsuleComponentName);
-	CapsuleComponent->InitCapsuleSize(30.0f, 90.0f);
-	CapsuleComponent->CanCharacterStepUpOn = ECB_No;
-	CapsuleComponent->SetShouldUpdatePhysicsVolume(true);
-	CapsuleComponent->SetCanEverAffectNavigation(false);
-	CapsuleComponent->bDynamicObstacle = true;
-	RootComponent = CapsuleComponent;
+	if (CapsuleComponent) {
+		CapsuleComponent->InitCapsuleSize(30.0f, 90.0f);
+		CapsuleComponent->CanCharacterStepUpOn = ECB_No;
+		CapsuleComponent->SetShouldUpdatePhysicsVolume(true);
+		CapsuleComponent->SetCanEverAffectNavigation(false);
+		CapsuleComponent->bDynamicObstacle = true;
+		RootComponent = CapsuleComponent;
+	}
 
 	AlsCharacterMovement = CreateDefaultSubobject<UAlsCharacterMovementComponent>(CharacterMovementComponentName);
 
@@ -65,25 +66,10 @@ AAlsCharacter::AAlsCharacter(const FObjectInitializer& ObjectInitializer) : Supe
 	GetMesh()->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::OnlyTickMontagesWhenNotRendered;
 	GetMesh()->bEnableUpdateRateOptimizations = false;
 
-	// This will prevent the editor from combining component details with actor details.
-	// Component details can still be accessed from the actor's component hierarchy.
-
-#if WITH_EDITOR
-	StaticClass()->FindPropertyByName(FName{TEXTVIEW("Mesh")})->SetPropertyFlags(CPF_DisableEditOnInstance);
-	StaticClass()->FindPropertyByName(FName{TEXTVIEW("CapsuleComponent")})->SetPropertyFlags(CPF_DisableEditOnInstance);
-	StaticClass()->FindPropertyByName(FName{TEXTVIEW("CharacterMovement")})->SetPropertyFlags(CPF_DisableEditOnInstance);
-#endif
+	Camera = CreateDefaultSubobject<UAlsCameraComponent>(FName{TEXTVIEW("Camera")});
+	Camera->SetupAttachment(GetMesh());
+	Camera->SetRelativeRotation_Direct({0.0f, 90.0f, 0.0f});
 }
-
-#if WITH_EDITOR
-bool AAlsCharacter::CanEditChange(const FProperty* Property) const
-{
-	return Super::CanEditChange(Property) &&
-	       Property->GetFName() != GET_MEMBER_NAME_STRING_VIEW_CHECKED(ThisClass, bUseControllerRotationPitch) &&
-	       Property->GetFName() != GET_MEMBER_NAME_STRING_VIEW_CHECKED(ThisClass, bUseControllerRotationYaw) &&
-	       Property->GetFName() != GET_MEMBER_NAME_STRING_VIEW_CHECKED(ThisClass, bUseControllerRotationRoll);
-}
-#endif
 
 
 void AAlsCharacter::PostInitializeComponents()
@@ -122,6 +108,12 @@ void AAlsCharacter::CalcCamera(const float DeltaTime, FMinimalViewInfo& ViewInfo
 {
 	if (!OnCalculateCamera(DeltaTime, ViewInfo))
 	{
+		if (Camera->IsActive())
+		{
+			Camera->GetViewInfo(ViewInfo);
+			return;
+		}
+
 		Super::CalcCamera(DeltaTime, ViewInfo);
 	}
 }
@@ -129,7 +121,7 @@ void AAlsCharacter::CalcCamera(const float DeltaTime, FMinimalViewInfo& ViewInfo
 void AAlsCharacter::Tick(const float DeltaTime)
 {
 	DECLARE_SCOPE_CYCLE_COUNTER(TEXT("AAlsCharacter::Tick"), STAT_AAlsCharacter_Tick, STATGROUP_Als)
-	TRACE_CPUPROFILER_EVENT_SCOPE(AAlsCharacter::Tick);
+	TRACE_CPUPROFILER_EVENT_SCOPE(__FUNCTION__);
 
 	if (!AnimationInstance.IsValid())
 	{
@@ -194,14 +186,9 @@ void AAlsCharacter::RefreshMeshProperties() const
 	}
 }
 
-FRotator AAlsCharacter::GetViewRotation() const
-{
-	return AlsCharacterMovement->ViewState.Rotation;
-}
-
 //map GMC MovementMode to ALS LocomotionMode for use in the anim instance
 //way too lazy to go through and change them all
-const FGameplayTag& AAlsCharacter::GetLocomotionMode() const
+const FGameplayTag AAlsCharacter::GetLocomotionMode() const
 {
 	switch (AlsCharacterMovement->GetMovementMode())
 	{

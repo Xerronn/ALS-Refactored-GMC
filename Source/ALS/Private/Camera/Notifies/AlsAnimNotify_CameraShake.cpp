@@ -1,4 +1,4 @@
-#include "Notifies/AlsAnimNotify_CameraShake.h"
+#include "Camera/Notifies/AlsAnimNotify_CameraShake.h"
 
 #include "Camera/CameraShakeBase.h"
 #include "Components/SkeletalMeshComponent.h"

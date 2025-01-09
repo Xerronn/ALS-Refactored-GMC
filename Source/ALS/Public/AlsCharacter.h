@@ -2,6 +2,7 @@
 
 #include "AlsCharacterMovementComponent.h"
 #include "GMCPawn.h"
+#include "Camera/AlsCameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "State/AlsLocomotionState.h"
 #include "State/AlsMantlingState.h"
@@ -35,11 +36,14 @@ protected:
 		meta=(AllowPrivateAccess = "true"))
 	TObjectPtr<UCapsuleComponent> CapsuleComponent;
 	
-	UPROPERTY(BlueprintReadOnly, Category = "Als Character")
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Als Character")
 	TObjectPtr<UAlsCharacterMovementComponent> AlsCharacterMovement;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State|Als Character", Transient, Meta = (ShowInnerProperties))
 	TWeakObjectPtr<UAlsAnimationInstance> AnimationInstance;
+
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere)
+	TObjectPtr<UAlsCameraComponent> Camera;
 
 public:
 	explicit AAlsCharacter(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
@@ -48,12 +52,6 @@ public:
 	static FName CharacterMovementComponentName;
 	static FName CapsuleComponentName;
 	static FName FPSComponentName;
-
-#if WITH_EDITOR
-	virtual bool CanEditChange(const FProperty* Property) const override;
-#endif
-
-	virtual void PostRegisterAllComponents() override;
 
 	virtual void PostInitializeComponents() override;
 
@@ -86,39 +84,10 @@ public:
 	TObjectPtr<UCapsuleComponent> GetCapsuleComponent() const;
 	
 	TObjectPtr<UAlsCharacterMovementComponent> GetCharacterMovement() const;
-public:
-	const FGameplayTag& GetViewMode() const;
-	
-	const FGameplayTag& GetLocomotionMode() const;
-	
-	bool IsDesiredAiming() const;
-	
-	const FGameplayTag& GetDesiredRotationMode() const;
-	
-	const FGameplayTag& GetRotationMode() const;
-	
-	const FGameplayTag& GetDesiredStance() const;
-	
-	const FGameplayTag& GetStance() const;
-	
-	const FGameplayTag& GetDesiredGait() const;
-	
-	const FGameplayTag& GetGait() const;
-	
-	const FGameplayTag& GetOverlayMode() const;
-	
-	const FGameplayTag& GetLocomotionAction() const;
-	
-	const FVector& GetInputDirection() const;
 
-	virtual FRotator GetViewRotation() const override;
+	TObjectPtr<UAlsCameraComponent> GetCamera() const;
 	
-	const FAlsViewState& GetViewState() const;
-	
-	const FAlsLocomotionState& GetLocomotionState() const;
-
-	const FAlsRagdollingState& GetRagdollingState() const;
-
+	const FGameplayTag GetLocomotionMode() const;
 
 private:
 	virtual void FaceRotation(FRotator Rotation, float DeltaTime) override final;
@@ -163,72 +132,7 @@ inline TObjectPtr<UAlsCharacterMovementComponent> AAlsCharacter::GetCharacterMov
 	return AlsCharacterMovement;
 }
 
-inline const FGameplayTag& AAlsCharacter::GetViewMode() const
+inline TObjectPtr<UAlsCameraComponent> AAlsCharacter::GetCamera() const
 {
-	return AlsCharacterMovement->ViewMode;
-}
-
-inline bool AAlsCharacter::IsDesiredAiming() const
-{
-	return AlsCharacterMovement->bDesiredAiming;
-}
-
-inline const FGameplayTag& AAlsCharacter::GetDesiredRotationMode() const
-{
-	return AlsCharacterMovement->DesiredRotationMode;
-}
-
-inline const FGameplayTag& AAlsCharacter::GetRotationMode() const
-{
-	return AlsCharacterMovement->RotationMode;
-}
-
-inline const FGameplayTag& AAlsCharacter::GetDesiredStance() const
-{
-	return AlsCharacterMovement->DesiredStance;
-}
-
-inline const FGameplayTag& AAlsCharacter::GetStance() const
-{
-	return AlsCharacterMovement->Stance;
-}
-
-inline const FGameplayTag& AAlsCharacter::GetDesiredGait() const
-{
-	return AlsCharacterMovement->DesiredGait;
-}
-
-inline const FGameplayTag& AAlsCharacter::GetGait() const
-{
-	return AlsCharacterMovement->Gait;
-}
-
-inline const FGameplayTag& AAlsCharacter::GetOverlayMode() const
-{
-	return AlsCharacterMovement->OverlayMode;
-}
-
-inline const FGameplayTag& AAlsCharacter::GetLocomotionAction() const
-{
-	return AlsCharacterMovement->LocomotionAction;
-}
-
-inline const FVector& AAlsCharacter::GetInputDirection() const
-{
-	return AlsCharacterMovement->InputDirection;
-}
-
-inline const FAlsViewState& AAlsCharacter::GetViewState() const
-{
-	return AlsCharacterMovement->ViewState;
-}
-
-inline const FAlsLocomotionState& AAlsCharacter::GetLocomotionState() const
-{
-	return AlsCharacterMovement->LocomotionState;
-}
-
-inline const FAlsRagdollingState& AAlsCharacter::GetRagdollingState() const
-{
-	return AlsCharacterMovement->RagdollingState;
+	return Camera;
 }

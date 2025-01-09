@@ -38,10 +38,10 @@ void UAlsAnimNotifyState_EarlyBlendOut::BranchingPointNotifyTick(FBranchingPoint
 	const auto* Character{IsValid(AnimationInstance) ? Cast<AAlsCharacter>(Mesh->GetOwner()) : nullptr};
 
 	if (IsValid(Character) &&
-	    ((bCheckInput && Character->GetLocomotionState().bHasInput) ||
+	    ((bCheckInput && Character->GetCharacterMovement()->GetLocomotionState().bHasInput) ||
 	     (bCheckLocomotionMode && Character->GetLocomotionMode() == LocomotionModeEquals) ||
-	     (bCheckRotationMode && Character->GetRotationMode() == RotationModeEquals) ||
-	     (bCheckStance && Character->GetStance() == StanceEquals)))
+	     (bCheckRotationMode && Character->GetCharacterMovement()->GetRotationMode() == RotationModeEquals) ||
+	     (bCheckStance && Character->GetCharacterMovement()->GetStance() == StanceEquals)))
 	{
 		auto* MontageInstance{AnimationInstance->GetMontageInstanceForID(NotifyPayload.MontageInstanceID)};
 		if (!ALS_ENSURE(MontageInstance != nullptr))

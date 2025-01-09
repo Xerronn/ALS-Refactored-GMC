@@ -17,7 +17,7 @@ public class ALS : ModuleRules
 
 		PrivateDependencyModuleNames.AddRange(new[]
 		{
-			"EngineSettings", "NetCore", "PhysicsCore", "Niagara"
+			"EngineSettings", "NetCore", "PhysicsCore", "Niagara", "EnhancedInput"
 		});
 
 		if (Target.Type == TargetRules.TargetType.Editor)

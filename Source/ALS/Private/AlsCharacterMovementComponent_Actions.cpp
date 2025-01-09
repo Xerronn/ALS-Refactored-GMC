@@ -27,6 +27,79 @@ bool UAlsCharacterMovementComponent::CanJump() const
 
 }
 
+EGMC_CollisionShape UAlsCharacterMovementComponent::InterpToSphereAndSwitchCollisionShape(
+  EGMC_CollisionShape CurrentShape,
+  float SphereRadius,
+  float DeltaSeconds
+)
+{
+	const EGMC_CollisionShape TargetShape =
+	  CurrentShape == EGMC_CollisionShape::VerticalCapsule ? EGMC_CollisionShape::HorizontalCapsule : EGMC_CollisionShape::VerticalCapsule;
+
+	const FVector Extent = GetRootCollisionExtent(true);
+	float CurrentRadius = Extent.X;
+	float CurrentHalfHeight = Extent.Z;
+
+	CurrentHalfHeight -= TargetShape == EGMC_CollisionShape::HorizontalCapsule ?
+	  LerpRootCollisionHalfHeight(CurrentRadius, ChangeStanceSpeed, 0.99f, DeltaSeconds, true,EGMC_AdjustDirection::Down) :
+	  LerpRootCollisionWidth(CurrentRadius, ChangeStanceSpeed, 0.99f, DeltaSeconds);
+
+	if (FMath::IsNearlyEqual(CurrentHalfHeight, CurrentRadius, 1.f))
+	{
+		SetRootCollisionShape(TargetShape, FVector{SphereRadius}, true);
+		return TargetShape;
+	}
+
+	return CurrentShape;
+}
+
+void UAlsCharacterMovementComponent::MaintainMeshOffset()
+{
+	if (!SkeletalMesh)
+	{
+		return;
+	}
+	const FVector CurrentRelativeLocation = SkeletalMesh->GetRelativeLocation();
+	SkeletalMesh->SetRelativeLocation({CurrentRelativeLocation.X, CurrentRelativeLocation.Y, -GetRootCollisionHalfHeight(true)});
+}
+
+void UAlsCharacterMovementComponent::MaintainMeshOffsetSimulated()
+{
+	if (!SkeletalMesh)
+	{
+		return;
+	}
+
+	if (!IsExtrapolating())
+	{
+		const int32 TargetIdx	= GetSmoothingTargetIdx();
+		const int32 StartIdx	= TargetIdx - 1;
+		const double SmoothingTime = GetSmoothingTime();
+		if(SmoothingTime < 0. || !IsValidMoveHistoryIndex(StartIdx) || !IsValidMoveHistoryIndex(TargetIdx))
+		{
+			return;
+		}
+
+		const auto& StartState = MoveHistory[StartIdx].OutputState;
+		const auto& TargetState = MoveHistory[TargetIdx].OutputState;
+
+		const uint8 StartShape = StartState.UnsignedInt4.Read(BI_CurrentRootCollisionShape);
+		const uint8 TargetShape = TargetState.UnsignedInt4.Read(BI_CurrentRootCollisionShape);
+
+		if (StartShape != TargetShape)
+		{
+			const double StartTime = MoveHistory[StartIdx].MetaData.Timestamp;
+			const double TargetTime = MoveHistory[TargetIdx].MetaData.Timestamp;
+			const float Alpha = FMath::Clamp((SmoothingTime - StartTime) / FMath::Max(TargetTime - StartTime, (double)MIN_DELTA_TIME), 0., 1.);
+
+			auto& NoSmoothState = const_cast<FGMC_PawnState&>(Alpha < 0.5 ? StartState : TargetState);
+			ProcessSyncData(NoSmoothState, {DataOp::Apply}, AliasData, bUseRelativeValuesForSimulation, this);
+		}
+	}
+	
+	MaintainMeshOffset();
+}
+
 //stances
 void UAlsCharacterMovementComponent::Stand(EGMC_CollisionShape CurrentCollisionShape, float DeltaSeconds)
 {

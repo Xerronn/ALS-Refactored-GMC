@@ -118,14 +118,12 @@ void UAlsCharacterMovementComponent::StopSwitchShoulderAction(const FInputAction
 
 void UAlsCharacterMovementComponent::StartAimAction(const FInputActionInstance& InputAction)
 {
-	// CharacterOwner->GetFPSComponent()->StartAiming();
-	// bDesiredAiming = true;
+	bDesiredAiming = true;
 }
 	
 void UAlsCharacterMovementComponent::StopAimAction(const FInputActionInstance& InputAction)
 {
-	// CharacterOwner->GetFPSComponent()->StopAiming();
-	// bDesiredAiming = false;
+	bDesiredAiming = false;
 }
 
 void UAlsCharacterMovementComponent::StartRagdollAction(const FInputActionInstance& InputAction)

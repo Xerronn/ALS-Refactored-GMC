@@ -1,7 +1,7 @@
 {
 	"FileVersion": 3,
-	"Version": 15,
-	"VersionName": "4.14",
+	"Version": 17,
+	"VersionName": "4.16",
 	"FriendlyName": "Generic Movement Advanced Locomotion System",
 	"Description": "Completely reworked and improved С++ version of Advanced Locomotion System V4 with GMC integration.",
 	"Category": "Animation",
@@ -10,7 +10,7 @@
 	"DocsURL": "https://github.com/Xerronn/GMALS",
 	"MarketplaceURL": "https://www.unrealengine.com/marketplace/en-US/product/advanced-locomotion-system-v1",
 	"SupportURL": "https://discord.com/invite/G37j8JHkMz",
-	"EngineVersion": "5.4.0",
+	"EngineVersion": "5.5.0",
 	"EnabledByDefault": true,
 	"CanContainContent": true,
 	"IsBetaVersion": false,
@@ -19,11 +19,6 @@
 	"Modules": [
 		{
 			"Name": "ALS",
-			"Type": "Runtime",
-			"LoadingPhase": "Default"
-		},
-		{
-			"Name": "ALSExtras",
 			"Type": "Runtime",
 			"LoadingPhase": "Default"
 		},
@@ -47,11 +42,11 @@
 			"Enabled": true
 		},
 		{
-			"Name": "EnhancedInput",
+			"Name": "EngineCameras",
 			"Enabled": true
 		},
 		{
-			"Name": "GameplayCameras",
+			"Name": "EnhancedInput",
 			"Enabled": true
 		},
 		{

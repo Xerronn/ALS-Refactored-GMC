@@ -5,13 +5,13 @@
 #include "AlsCameraComponent.generated.h"
 
 class UAlsCameraSettings;
-class ACharacter;
+class AAlsCharacter;
 
 UCLASS(ClassGroup = "ALS", Meta = (BlueprintSpawnableComponent),
 	HideCategories = ("ComponentTick", "Clothing", "Physics", "MasterPoseComponent", "Collision", "AnimationRig",
 		"Lighting", "Deformer", "Rendering", "PathTracing", "HLOD", "Navigation", "VirtualTexture", "SkeletalMesh",
 		"LeaderPoseComponent", "Optimization", "LOD", "MaterialParameters", "TextureStreaming", "Mobile", "RayTracing"))
-class ALSCAMERA_API UAlsCameraComponent : public USkeletalMeshComponent
+class ALS_API UAlsCameraComponent : public USkeletalMeshComponent
 {
 	GENERATED_BODY()
 
@@ -30,7 +30,7 @@ protected:
 	float PostProcessWeight{0.0f};
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State", Transient)
-	TObjectPtr<ACharacter> Character;
+	TObjectPtr<AAlsCharacter> Character;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State", Transient, Meta = (ShowInnerProperties))
 	TWeakObjectPtr<UAnimInstance> AnimationInstance;
@@ -76,6 +76,8 @@ protected:
 
 public:
 	UAlsCameraComponent();
+
+	virtual void PostLoad() override;
 
 	virtual void OnRegister() override;
 

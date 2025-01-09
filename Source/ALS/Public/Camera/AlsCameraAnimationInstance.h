@@ -8,7 +8,7 @@ class AAlsCharacter;
 class UAlsCameraComponent;
 
 UCLASS()
-class ALSCAMERA_API UAlsCameraAnimationInstance : public UAnimInstance
+class ALS_API UAlsCameraAnimationInstance : public UAnimInstance
 {
 	GENERATED_BODY()
 

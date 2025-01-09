@@ -29,7 +29,7 @@ void UAlsAnimNotifyState_SetLocomotionAction::NotifyBegin(USkeletalMeshComponent
 	auto* Character{Cast<AAlsCharacter>(Mesh->GetOwner())};
 	if (IsValid(Character))
 	{
-		Character->SetLocomotionAction(LocomotionAction);
+		Character->GetCharacterMovement()->SetLocomotionAction(LocomotionAction);
 	}
 }
 
@@ -40,8 +40,8 @@ void UAlsAnimNotifyState_SetLocomotionAction::NotifyEnd(USkeletalMeshComponent* 
 
 	auto* Character{Cast<AAlsCharacter>(Mesh->GetOwner())};
 
-	if (IsValid(Character) && Character->GetLocomotionAction() == LocomotionAction)
+	if (IsValid(Character) && Character->GetCharacterMovement()->GetLocomotionAction() == LocomotionAction)
 	{
-		Character->SetLocomotionAction(FGameplayTag::EmptyTag);
+		Character->GetCharacterMovement()->SetLocomotionAction(FGameplayTag::EmptyTag);
 	}
 }

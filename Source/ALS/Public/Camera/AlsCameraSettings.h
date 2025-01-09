@@ -6,7 +6,7 @@
 #include "AlsCameraSettings.generated.h"
 
 USTRUCT(BlueprintType)
-struct ALSCAMERA_API FAlsFirstPersonCameraSettings
+struct ALS_API FAlsFirstPersonCameraSettings
 {
 	GENERATED_BODY()
 
@@ -18,7 +18,7 @@ struct ALSCAMERA_API FAlsFirstPersonCameraSettings
 };
 
 USTRUCT(BlueprintType)
-struct ALSCAMERA_API FAlsTraceDistanceSmoothingSettings
+struct ALS_API FAlsTraceDistanceSmoothingSettings
 {
 	GENERATED_BODY()
 
@@ -27,7 +27,7 @@ struct ALSCAMERA_API FAlsTraceDistanceSmoothingSettings
 };
 
 USTRUCT(BlueprintType)
-struct ALSCAMERA_API FAlsThirdPersonCameraSettings
+struct ALS_API FAlsThirdPersonCameraSettings
 {
 	GENERATED_BODY()
 
@@ -63,17 +63,8 @@ struct ALSCAMERA_API FAlsThirdPersonCameraSettings
 	FAlsTraceDistanceSmoothingSettings TraceDistanceSmoothing;
 };
 
-USTRUCT(BlueprintType)
-struct ALSCAMERA_API FAlsCameraLagSubsteppingSettings
-{
-	GENERATED_BODY()
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS", Meta = (ClampMin = 0.005, ClampMax = 0.5, ForceUnits = "s"))
-	float LagSubstepDeltaTime{1.0f / 60.0f};
-};
-
 UCLASS(Blueprintable, BlueprintType)
-class ALSCAMERA_API UAlsCameraSettings : public UDataAsset
+class ALS_API UAlsCameraSettings : public UDataAsset
 {
 	GENERATED_BODY()
 
@@ -91,13 +82,6 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings")
 	FAlsThirdPersonCameraSettings ThirdPerson;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings", Meta = (InlineEditConditionToggle))
-	uint8 bEnableCameraLagSubstepping : 1 {false};
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings",
-		DisplayName = "Enable Camera Lag Substepping", Meta = (EditCondition = "bEnableCameraLagSubstepping"))
-	FAlsCameraLagSubsteppingSettings CameraLagSubstepping;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings")
 	FPostProcessSettings PostProcess;
