@@ -219,7 +219,7 @@ void AAlsCharacter::DisplayDebugState(const UCanvas* Canvas, const float Scale,
 
 	static const auto ViewModeText{
 		FText::AsCultureInvariant(FName::NameToDisplayString(
-			FString{GET_MEMBER_NAME_STRING_VIEW_CHECKED(ThisClass, GetCharacterMovement()->GetViewMode())}, false))
+			"View Mode", false))
 	};
 
 	Text.Text = ViewModeText;
@@ -232,7 +232,7 @@ void AAlsCharacter::DisplayDebugState(const UCanvas* Canvas, const float Scale,
 
 	static const auto LocomotionModeText{
 		FText::AsCultureInvariant(FName::NameToDisplayString(
-			FString{GET_MEMBER_NAME_STRING_VIEW_CHECKED(ThisClass, GetLocomotionMode())}, false))
+			"LocomotionMode", false))
 	};
 
 	Text.Text = LocomotionModeText;
@@ -245,7 +245,7 @@ void AAlsCharacter::DisplayDebugState(const UCanvas* Canvas, const float Scale,
 
 	static const auto DesiredAimingText{
 		FText::AsCultureInvariant(FName::NameToDisplayString(
-			FString{GET_MEMBER_NAME_STRING_VIEW_CHECKED(ThisClass, GetCharacterMovement()->IsDesiredAiming())}, true))
+			"IsDesiredAiming", true))
 	};
 
 	Text.Text = DesiredAimingText;
@@ -258,7 +258,7 @@ void AAlsCharacter::DisplayDebugState(const UCanvas* Canvas, const float Scale,
 
 	static const auto DesiredRotationModeText{
 		FText::AsCultureInvariant(FName::NameToDisplayString(
-			FString{GET_MEMBER_NAME_STRING_VIEW_CHECKED(ThisClass, GetCharacterMovement()->GetDesiredRotationMode())}, false))
+			"DesiredRotationMode", false))
 	};
 
 	Text.Text = DesiredRotationModeText;
@@ -272,7 +272,7 @@ void AAlsCharacter::DisplayDebugState(const UCanvas* Canvas, const float Scale,
 
 	static const auto RotationModeText{
 		FText::AsCultureInvariant(FName::NameToDisplayString(
-			FString{GET_MEMBER_NAME_STRING_VIEW_CHECKED(ThisClass, GetCharacterMovement()->GetRotationMode())}, false))
+			"RotationMode", false))
 	};
 
 	Text.Text = RotationModeText;
@@ -285,7 +285,7 @@ void AAlsCharacter::DisplayDebugState(const UCanvas* Canvas, const float Scale,
 
 	static const auto DesiredStanceText{
 		FText::AsCultureInvariant(FName::NameToDisplayString(
-			FString{GET_MEMBER_NAME_STRING_VIEW_CHECKED(ThisClass, GetCharacterMovement()->GetDesiredStance())}, false))
+			"DesiredStance", false))
 	};
 
 	Text.Text = DesiredStanceText;
@@ -298,7 +298,7 @@ void AAlsCharacter::DisplayDebugState(const UCanvas* Canvas, const float Scale,
 
 	static const auto StanceText{
 		FText::AsCultureInvariant(FName::NameToDisplayString(
-			FString{GET_MEMBER_NAME_STRING_VIEW_CHECKED(ThisClass, GetCharacterMovement()->GetStance())}, false))
+			"Stance", false))
 	};
 
 	Text.Text = StanceText;
@@ -311,7 +311,7 @@ void AAlsCharacter::DisplayDebugState(const UCanvas* Canvas, const float Scale,
 
 	static const auto DesiredGaitText{
 		FText::AsCultureInvariant(FName::NameToDisplayString(
-			FString{GET_MEMBER_NAME_STRING_VIEW_CHECKED(ThisClass, GetCharacterMovement()->GetDesiredGait())}, false))
+			"DesiredGait", false))
 	};
 
 	Text.Text = DesiredGaitText;
@@ -324,7 +324,7 @@ void AAlsCharacter::DisplayDebugState(const UCanvas* Canvas, const float Scale,
 
 	static const auto GaitText{
 		FText::AsCultureInvariant(FName::NameToDisplayString(
-			FString{GET_MEMBER_NAME_STRING_VIEW_CHECKED(ThisClass, GetCharacterMovement()->GetGait())}, false))
+			"Gait", false))
 	};
 
 	Text.Text = GaitText;
@@ -337,7 +337,7 @@ void AAlsCharacter::DisplayDebugState(const UCanvas* Canvas, const float Scale,
 
 	static const auto OverlayModeText{
 		FText::AsCultureInvariant(FName::NameToDisplayString(
-			FString{GET_MEMBER_NAME_STRING_VIEW_CHECKED(ThisClass, GetCharacterMovement()->GetOverlayMode())}, false))
+			"OverlayMode", false))
 	};
 
 	Text.Text = OverlayModeText;
@@ -350,7 +350,7 @@ void AAlsCharacter::DisplayDebugState(const UCanvas* Canvas, const float Scale,
 
 	static const auto LocomotionActionText{
 		FText::AsCultureInvariant(FName::NameToDisplayString(
-			FString{GET_MEMBER_NAME_STRING_VIEW_CHECKED(ThisClass, GetCharacterMovement()->GetLocomotionAction())}, false))
+			"LocomotionAction", false))
 	};
 
 	Text.Text = LocomotionActionText;
