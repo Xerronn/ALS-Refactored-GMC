@@ -130,13 +130,6 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State|Als Character", Transient)
 	FVector_NetQuantizeNormal InputDirection{ForceInit};
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State|Als Character",
-		Transient, Meta = (ClampMin = -180, ClampMax = 180, ForceUnits = "deg"))
-	float DesiredVelocityYawAngle{0.0f};
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State|Als Character", Transient)
-	uint8 bHasDesiredVelocity : 1 {false};
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State|Als Character", Transient)
 	FAlsLocomotionState LocomotionState;
 
@@ -423,8 +416,6 @@ public:
 	const FAlsLocomotionState& GetLocomotionState() const;
 
 private:
-	void SetDesiredVelocityYawAngle(float NewVelocityYawAngle);
-
 	void RefreshLocomotionLocationAndRotation();
 
 	void RefreshLocomotionEarly();

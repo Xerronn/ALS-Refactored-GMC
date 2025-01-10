@@ -66,6 +66,7 @@ void UAlsCharacterMovementComponent::BeginPlay()
 	ALS_ENSURE(Settings);
 	ALS_ENSURE(MovementSettings);
 	RefreshGaitSettings();
+	RefreshGroundedMovementSettings();
 
 	RotationMode = bDesiredAiming ? AlsRotationModeTags::Aiming : DesiredRotationMode;
 	Stance = DesiredStance;
@@ -175,7 +176,7 @@ void UAlsCharacterMovementComponent::BindReplicationData_Implementation()
 		EGMC_PredictionMode::ServerAuth_Output_ClientValidated,
 		EGMC_CombineMode::AlwaysCombine,
 		EGMC_SimulationMode::None,
-		{}
+		EGMC_InterpolationFunction::NearestNeighbour
 	);
 
 	BindGameplayTag(
@@ -183,7 +184,7 @@ void UAlsCharacterMovementComponent::BindReplicationData_Implementation()
 		EGMC_PredictionMode::ServerAuth_Output_ClientValidated,
 		EGMC_CombineMode::AlwaysCombine,
 		EGMC_SimulationMode::None,
-		{}
+		EGMC_InterpolationFunction::NearestNeighbour
 	);
 	
 	BindCompressedSinglePrecisionFloat(
@@ -191,7 +192,7 @@ void UAlsCharacterMovementComponent::BindReplicationData_Implementation()
 		EGMC_PredictionMode::ServerAuth_Output_ClientValidated,
 		EGMC_CombineMode::AlwaysCombine,
 		EGMC_SimulationMode::None,
-		{}
+		EGMC_InterpolationFunction::NearestNeighbour
 	);
 	//end of limiters
 
@@ -233,7 +234,7 @@ void UAlsCharacterMovementComponent::BindReplicationData_Implementation()
 		EGMC_PredictionMode::ServerAuth_Output_ClientValidated,
 		EGMC_CombineMode::AlwaysCombine,
 		EGMC_SimulationMode::None,
-		{}
+		EGMC_InterpolationFunction::NearestNeighbour
 	);
 
 	BindCompressedRotator(
@@ -241,7 +242,7 @@ void UAlsCharacterMovementComponent::BindReplicationData_Implementation()
 		EGMC_PredictionMode::ServerAuth_Output_ClientValidated,
 		EGMC_CombineMode::AlwaysCombine,
 		EGMC_SimulationMode::None,
-		{}
+		EGMC_InterpolationFunction::NearestNeighbour
 	);
 
 	BindCompressedVector(
@@ -249,7 +250,7 @@ void UAlsCharacterMovementComponent::BindReplicationData_Implementation()
 		EGMC_PredictionMode::ServerAuth_Output_ClientValidated,
 		EGMC_CombineMode::AlwaysCombine,
 		EGMC_SimulationMode::None,
-		{}
+		EGMC_InterpolationFunction::NearestNeighbour
 	);
 	
 	BindCompressedSinglePrecisionFloat(
@@ -257,7 +258,7 @@ void UAlsCharacterMovementComponent::BindReplicationData_Implementation()
 		EGMC_PredictionMode::ServerAuth_Output_ClientValidated,
 		EGMC_CombineMode::AlwaysCombine,
 		EGMC_SimulationMode::None,
-		{}
+		EGMC_InterpolationFunction::NearestNeighbour
 	);
 	//end of state
 
@@ -292,7 +293,7 @@ void UAlsCharacterMovementComponent::PreMovementUpdate_Implementation(float Delt
 void UAlsCharacterMovementComponent::MovementUpdate_Implementation(float DeltaSeconds)
 {
 	Super::MovementUpdate_Implementation(DeltaSeconds);
-
+	
 	RefreshInput(DeltaSeconds);
 
 	RefreshLocomotionEarly();
@@ -303,6 +304,8 @@ void UAlsCharacterMovementComponent::MovementUpdate_Implementation(float DeltaSe
 	MaintainMeshOffset();
 	ApplyDesiredGait(DesiredGait, DeltaSeconds);
 	ApplyDesiredRotationMode(DesiredRotationMode, DeltaSeconds);
+
+	RefreshGroundedMovementSettings();
 
 	RefreshGroundedRotation(DeltaSeconds);
 	RefreshInAirRotation(DeltaSeconds);
@@ -333,6 +336,8 @@ void UAlsCharacterMovementComponent::MovementUpdateSimulated_Implementation(floa
 	MaintainMeshOffsetSimulated();
 	ApplyDesiredGait(DesiredGait, DeltaSeconds);
 	ApplyDesiredRotationMode(DesiredRotationMode, DeltaSeconds);
+
+	RefreshGroundedMovementSettings();
 
 	RefreshGroundedRotation(DeltaSeconds);
 	RefreshInAirRotation(DeltaSeconds);
@@ -936,11 +941,6 @@ void UAlsCharacterMovementComponent::RefreshView(const float DeltaTime)
 	}
 }
 
-void UAlsCharacterMovementComponent::SetDesiredVelocityYawAngle(const float NewVelocityYawAngle)
-{
-	DesiredVelocityYawAngle = NewVelocityYawAngle;
-}
-
 void UAlsCharacterMovementComponent::RefreshLocomotionLocationAndRotation()
 {
 	const auto& ActorTransform{GetActorTransform()};
@@ -955,8 +955,6 @@ void UAlsCharacterMovementComponent::RefreshLocomotionEarly()
 	RotationMode == AlsRotationModeTags::VelocityDirection &&
 	Settings->bInheritMovementBaseRotationInVelocityDirectionRotationMode)
 	{
-		DesiredVelocityYawAngle = FMath::UnwindDegrees(UE_REAL_TO_FLOAT(
-			DesiredVelocityYawAngle));
 		LocomotionState.VelocityYawAngle = FMath::UnwindDegrees(UE_REAL_TO_FLOAT(
 			LocomotionState.VelocityYawAngle));
 	}
@@ -1068,9 +1066,7 @@ void UAlsCharacterMovementComponent::RefreshGroundedRotation(const float DeltaTi
 			{
 				// Rotate to the last velocity direction. Rotation of the movement
 				// base handled in the AAlsCharacter::RefreshLocomotionEarly() function.
-				TargetYawAngle = Settings->bRotateTowardsDesiredVelocityInVelocityDirectionRotationMode
-									 ? DesiredVelocityYawAngle
-									 : LocomotionState.VelocityYawAngle;
+				TargetYawAngle = LocomotionState.VelocityYawAngle;
 			}
 
 			static constexpr auto RotationInterpolationSpeed{12.0f};
@@ -1118,11 +1114,7 @@ void UAlsCharacterMovementComponent::RefreshGroundedRotation(const float DeltaTi
 	{
 		LocomotionState.bRotationTowardsLastInputDirectionBlocked = false;
 
-		const auto TargetYawAngle{
-			Settings->bRotateTowardsDesiredVelocityInVelocityDirectionRotationMode
-				? DesiredVelocityYawAngle
-				: LocomotionState.VelocityYawAngle
-		};
+		const auto TargetYawAngle{LocomotionState.VelocityYawAngle};
 
 		const auto RotationInterpolationSpeed{CalculateGroundedMovingRotationInterpolationSpeed()};
 
