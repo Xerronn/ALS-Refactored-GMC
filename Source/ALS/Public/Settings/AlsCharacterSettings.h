@@ -32,11 +32,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings")
 	uint8 bRotateToVelocityWhenSprinting : 1 {false};
 
-	// If checked, the character will rotate relative to the object it is standing on in the velocity
-	// direction rotation mode, otherwise the character will ignore that object and keep its world rotation.
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings")
-	uint8 bInheritMovementBaseRotationInVelocityDirectionRotationMode : 1 {false};
-
 	// If checked, the character will automatically rotate towards the view direction on any movement input while the actor is not moving.
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings")
 	uint8 bAutoRotateOnAnyInputWhileNotMovingInViewDirectionRotationMode : 1 {true};

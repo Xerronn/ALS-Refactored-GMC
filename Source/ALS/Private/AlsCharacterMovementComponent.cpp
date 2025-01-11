@@ -283,6 +283,8 @@ void UAlsCharacterMovementComponent::PreMovementUpdate_Implementation(float Delt
 {
 	Super::PreMovementUpdate_Implementation(DeltaSeconds);
 
+	RefreshGroundedMovementSettings();
+
 	if (GetIterationNumber() == 1)
 	{
 		bJustJumped = false;
@@ -305,10 +307,8 @@ void UAlsCharacterMovementComponent::MovementUpdate_Implementation(float DeltaSe
 	ApplyDesiredGait(DesiredGait, DeltaSeconds);
 	ApplyDesiredRotationMode(DesiredRotationMode, DeltaSeconds);
 
-	RefreshGroundedMovementSettings();
-
-	RefreshGroundedRotation(DeltaSeconds);
-	RefreshInAirRotation(DeltaSeconds);
+	// RefreshGroundedRotation(DeltaSeconds);
+	// RefreshInAirRotation(DeltaSeconds);
 
 	// StartMantlingInAir();
 	// RefreshMantling();
@@ -337,10 +337,8 @@ void UAlsCharacterMovementComponent::MovementUpdateSimulated_Implementation(floa
 	ApplyDesiredGait(DesiredGait, DeltaSeconds);
 	ApplyDesiredRotationMode(DesiredRotationMode, DeltaSeconds);
 
-	RefreshGroundedMovementSettings();
-
-	RefreshGroundedRotation(DeltaSeconds);
-	RefreshInAirRotation(DeltaSeconds);
+	// RefreshGroundedRotation(DeltaSeconds);
+	// RefreshInAirRotation(DeltaSeconds);
 
 	// StartMantlingInAir();
 	// RefreshMantling();
@@ -386,26 +384,26 @@ void UAlsCharacterMovementComponent::RefreshGroundedMovementSettings()
 	    IsValid(MovementSettings))
 	{
 		const auto* Controller{GetController()};
-
+	
 		const auto ViewRotation{
 			IsValid(Controller)
 				? GetController()->GetControlRotation()
 				: CharacterOwner->GetViewRotation()
 		};
-
+	
 		// Ideally we should use actor rotation here instead of view rotation, but we can't do that because ALS has
 		// full control over actor rotation and it is not synchronized over the network, so it would cause jitter.
 		
 		const auto RelativeViewRotation{UAlsRotation::GetTwist(ViewRotation.Quaternion(), FVector::DownVector)};
-
+	
 		const FVector2D RelativeVelocity{RelativeViewRotation.UnrotateVector(Velocity)};
 		const auto VelocityAngle{UAlsVector::DirectionToAngle(RelativeVelocity)};
-
+	
 		const auto ForwardSpeedAmount{
 			FMath::GetMappedRangeValueClamped(MovementSettings->VelocityAngleToSpeedInterpolationRange,
 			                                  {1.0f, 0.0f}, FMath::Abs(VelocityAngle))
 		};
-
+	
 		WalkSpeed = FMath::Lerp(GaitSettings.WalkBackwardSpeed, GaitSettings.WalkForwardSpeed, ForwardSpeedAmount);
 		RunSpeed = FMath::Lerp(GaitSettings.RunBackwardSpeed, GaitSettings.RunForwardSpeed, ForwardSpeedAmount);
 	}
@@ -414,7 +412,7 @@ void UAlsCharacterMovementComponent::RefreshGroundedMovementSettings()
 	// us to vary movement speeds but still use the mapped range in calculations for consistent results.
 
 	const auto Speed{UE_REAL_TO_FLOAT(Velocity.Size2D())};
-
+	
 	if (Speed > RunSpeed)
 	{
 		GaitAmount = FMath::GetMappedRangeValueClamped(FVector2f{RunSpeed, GaitSettings.SprintSpeed}, {2.0f, 3.0f}, Speed);
@@ -427,7 +425,7 @@ void UAlsCharacterMovementComponent::RefreshGroundedMovementSettings()
 	{
 		GaitAmount = FMath::GetMappedRangeValueClamped(FVector2f{0.0f, WalkSpeed}, {0.0f, 1.0f}, Speed);
 	}
-
+	
 	if (MaxAllowedGait == AlsGaitTags::Walking)
 	{
 		MaxDesiredSpeed = WalkSpeed;
@@ -453,7 +451,7 @@ void UAlsCharacterMovementComponent::RefreshGroundedMovementSettings()
 		const auto& AccelerationAndDecelerationAndGroundFrictionCurves{
 			GaitSettings.AccelerationAndDecelerationAndGroundFrictionCurve->FloatCurves
 		};
-
+	
 		InputAccelerationGrounded = AccelerationAndDecelerationAndGroundFrictionCurves[0].Eval(GaitAmount);
 		BrakingDecelerationGrounded = AccelerationAndDecelerationAndGroundFrictionCurves[1].Eval(GaitAmount);
 		GroundFriction = AccelerationAndDecelerationAndGroundFrictionCurves[2].Eval(GaitAmount);
@@ -951,14 +949,6 @@ void UAlsCharacterMovementComponent::RefreshLocomotionLocationAndRotation()
 
 void UAlsCharacterMovementComponent::RefreshLocomotionEarly()
 {
-	if (!LocomotionState.bMoving &&
-	RotationMode == AlsRotationModeTags::VelocityDirection &&
-	Settings->bInheritMovementBaseRotationInVelocityDirectionRotationMode)
-	{
-		LocomotionState.VelocityYawAngle = FMath::UnwindDegrees(UE_REAL_TO_FLOAT(
-			LocomotionState.VelocityYawAngle));
-	}
-	
 	RefreshLocomotionLocationAndRotation();
 
 	LocomotionState.PreviousVelocity = LocomotionState.Velocity;
@@ -968,8 +958,6 @@ void UAlsCharacterMovementComponent::RefreshLocomotionEarly()
 
 void UAlsCharacterMovementComponent::RefreshLocomotion()
 {
-	const auto bHadVelocity{LocomotionState.bHasVelocity};
-
 	LocomotionState.Velocity = GetVelocity();
 
 	// Determine if the character is moving by getting its speed. The speed equals the length
