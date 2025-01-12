@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include "AlsGroundedState.h"
 
 #include "AlsLocomotionState.generated.h"
 
@@ -62,4 +63,15 @@ struct ALS_API FAlsLocomotionState
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS")
 	uint8 bResetAimingLimit : 1 {true};
+
+	//ported logic from AnimationInstance for GMC conversion
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS")
+	FAlsVelocityBlendState VelocityBlend;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS")
+	FAlsRotationYawOffsetsState RotationYawOffsets;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS", Meta = (ClampMin = 0, ClampMax = 180, ForceUnits = "deg"))
+	float RotationYawOffset{0.0f};
+	
 };

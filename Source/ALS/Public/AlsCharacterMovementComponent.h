@@ -420,7 +420,11 @@ private:
 
 	void RefreshLocomotionEarly();
 
-	void RefreshLocomotion();
+	void RefreshLocomotion(const float DeltaTime);
+
+	void RefreshVelocityBlend(const float DeltaTime);
+
+	void RefreshRotationYawOffsets(const float ViewRelativeVelocityYawAngle);
 
 	void RefreshLocomotionLate();
 

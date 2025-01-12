@@ -36,6 +36,22 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings")
 	uint8 bAutoRotateOnAnyInputWhileNotMovingInViewDirectionRotationMode : 1 {true};
 
+	//Ported from AlsAnimationInstance Settings
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS", Meta = (ClampMin = 0))
+	float VelocityBlendInterpolationSpeed{12.0f};
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS")
+	TObjectPtr<UCurveFloat> RotationYawOffsetForwardCurve;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS")
+	TObjectPtr<UCurveFloat> RotationYawOffsetBackwardCurve;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS")
+	TObjectPtr<UCurveFloat> RotationYawOffsetLeftCurve;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS")
+	TObjectPtr<UCurveFloat> RotationYawOffsetRightCurve;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings")
 	FAlsViewSettings View;
 
