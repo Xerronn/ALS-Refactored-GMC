@@ -776,7 +776,7 @@ void UAlsAnimationInstance::RefreshRotationYawOffsets(const float ViewRelativeVe
 	// The curves allow us to precisely control the offset for each movement direction.
 
 	auto& RotationYawOffsets{GroundedState.RotationYawOffsets};
-	//todo port this to charactermovementcomponent
+	//todo remove this logic and use the values provided by movementcomponent locomotionState
 	RotationYawOffsets.ForwardAngle = Settings->Grounded.RotationYawOffsetForwardCurve->GetFloatValue(ViewRelativeVelocityYawAngle);
 	RotationYawOffsets.BackwardAngle = Settings->Grounded.RotationYawOffsetBackwardCurve->GetFloatValue(ViewRelativeVelocityYawAngle);
 	RotationYawOffsets.LeftAngle = Settings->Grounded.RotationYawOffsetLeftCurve->GetFloatValue(ViewRelativeVelocityYawAngle);

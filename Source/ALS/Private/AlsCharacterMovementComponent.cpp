@@ -777,9 +777,9 @@ void UAlsCharacterMovementComponent::ApplyDesiredGait(const FGameplayTag& GaitTo
 
 	// Update the character max walk speed to the configured speeds based on the currently max allowed gait.
 
-	SetMaxAllowedGait(MaxAllowedGait);
+	SetMaxAllowedGait(CurrentMaxAllowedGait);
 
-	const auto ActualGait{CalculateActualGait(MaxAllowedGait)};
+	const auto ActualGait{CalculateActualGait(CurrentMaxAllowedGait)};
 	
 	if (GaitToApply == AlsGaitTags::Sprinting)
 	{
@@ -911,13 +911,13 @@ FVector UAlsCharacterMovementComponent::TransformInputVectorAbsoluteZ(const FVec
 
 void UAlsCharacterMovementComponent::RefreshInput(const float DeltaTime)
 {
-	if (GetOwnerRole() >= ROLE_AutonomousProxy)
+	if (IsSimulatedProxy())
 	{
-		RoundVector(ProcessedInputVector = PreProcessInputVector(GetRawInputVector()), EGMC_FloatPrecisionBlueprint::TwoDecimals);
+		ProcessedInputVector = RoundInputVector(PreProcessInputVector(GetRawInputVector()),EGMC_FloatPrecisionBlueprint::TwoDecimals);
 	}
 
 	LocomotionState.bHasInput = GetProcessedInputVector().SizeSquared() > UE_KINDA_SMALL_NUMBER;
-
+	
 	if (LocomotionState.bHasInput)
 	{
 		LocomotionState.InputYawAngle = UE_REAL_TO_FLOAT(UAlsVector::DirectionToAngleXY(GetProcessedInputVector()));
