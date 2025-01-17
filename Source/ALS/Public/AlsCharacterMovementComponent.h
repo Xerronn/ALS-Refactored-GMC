@@ -110,7 +110,7 @@ protected:
 	FGameplayTag ViewMode{AlsViewModeTags::ThirdPerson};
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings|Als Character|Desired State")
-	FGameplayTag OverlayMode{AlsOverlayModeTags::Default};
+	FGameplayTag DesiredOverlayMode{AlsOverlayModeTags::Default};
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State|Als Character", Transient)
 	FGameplayTag RotationMode{AlsRotationModeTags::ViewDirection};
@@ -120,6 +120,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State|Als Character", Transient)
 	FGameplayTag Gait{AlsGaitTags::Walking};
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State|Als Character", Transient)
+	FGameplayTag OverlayMode{AlsOverlayModeTags::Default};
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State|Als Character", Transient)
 	FGameplayTag LocomotionAction;
@@ -378,11 +381,16 @@ private:
 
 public:
 	const FGameplayTag& GetOverlayMode() const;
+	const FGameplayTag& GetDesiredOverlayMode() const;
 
-	UFUNCTION(BlueprintCallable, Category = "ALS|Character", Meta = (AutoCreateRefTerm = "NewOverlayMode"))
-	void SetOverlayMode(const FGameplayTag& NewOverlayMode);
+	UFUNCTION(BlueprintCallable, Category = "ALS|Character", Meta = (AutoCreateRefTerm = "NewDesiredOverlayMode"))
+	void SetDesiredOverlayMode(const FGameplayTag& NewDesiredOverlayMode);
 
 protected:
+	void SetOverlayMode(const FGameplayTag& NewOverlayMode);
+	
+	void ApplyDesiredOverlayMode(const FGameplayTag& OverlayToApply);
+	
 	UFUNCTION(BlueprintNativeEvent, Category = "Als Character")
 	void OnOverlayModeChanged(const FGameplayTag& PreviousOverlayMode);
 
@@ -645,6 +653,11 @@ inline const FGameplayTag& UAlsCharacterMovementComponent::GetGait() const
 inline const FGameplayTag& UAlsCharacterMovementComponent::GetOverlayMode() const
 {
 	return OverlayMode;
+}
+
+inline const FGameplayTag& UAlsCharacterMovementComponent::GetDesiredOverlayMode() const
+{
+	return DesiredOverlayMode;
 }
 
 inline const FGameplayTag& UAlsCharacterMovementComponent::GetLocomotionAction() const

@@ -20,6 +20,8 @@ class UAlsMovementSettings;
 class UAlsAnimationInstance;
 class UAlsMantlingSettings;
 
+
+
 UCLASS(AutoExpandCategories = ("Settings|Als Character", "Settings|Als Character|Desired State"))
 class ALS_API AAlsCharacter : public AGMC_Pawn
 {
@@ -68,6 +70,9 @@ public:
 
 	UFUNCTION(BlueprintNativeEvent, Category = "Als Character")
 	void OnJump();
+
+	UFUNCTION(BlueprintNativeEvent, Category = "Als Character")
+	void OnOverlayModeChanged(const FGameplayTag& PreviousOverlayMode);
 
 protected:
 	UFUNCTION(BlueprintNativeEvent, Category = "Als Character", Meta = (ReturnDisplayName = "Handled"))

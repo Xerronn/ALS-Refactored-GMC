@@ -153,7 +153,7 @@ void UAlsCharacterMovementComponent::BindReplicationData_Implementation()
 	);
 
 	BindGameplayTag(
-		OverlayMode,
+		DesiredOverlayMode,
 		EGMC_PredictionMode::ClientAuth_Input,
 		EGMC_CombineMode::CombineIfUnchanged,
 		EGMC_SimulationMode::Periodic_Output,
@@ -215,6 +215,14 @@ void UAlsCharacterMovementComponent::BindReplicationData_Implementation()
 
 	BindGameplayTag(
 		RotationMode,
+		EGMC_PredictionMode::ServerAuth_Output_ClientValidated,
+		EGMC_CombineMode::AlwaysCombine,
+		EGMC_SimulationMode::None,
+		EGMC_InterpolationFunction::NearestNeighbour
+	);
+
+	BindGameplayTag(
+		OverlayMode,
 		EGMC_PredictionMode::ServerAuth_Output_ClientValidated,
 		EGMC_CombineMode::AlwaysCombine,
 		EGMC_SimulationMode::None,
@@ -371,6 +379,8 @@ void UAlsCharacterMovementComponent::MovementUpdate_Implementation(float DeltaSe
 	// ApplyDesiredRagdoll(bWantsToRagdoll, DeltaSeconds);
 
 	RefreshLocomotionLate();
+
+	ApplyDesiredOverlayMode(DesiredOverlayMode);
 }
 
 void UAlsCharacterMovementComponent::MovementUpdateSimulated_Implementation(float DeltaSeconds)
@@ -401,6 +411,8 @@ void UAlsCharacterMovementComponent::MovementUpdateSimulated_Implementation(floa
 	// ApplyDesiredRagdoll(bWantsToRagdoll, DeltaSeconds);
 
 	RefreshLocomotionLate();
+
+	ApplyDesiredOverlayMode(DesiredOverlayMode);
 }
 
 void UAlsCharacterMovementComponent::SetMovementSettings(UAlsMovementSettings* NewMovementSettings)
@@ -907,6 +919,18 @@ bool UAlsCharacterMovementComponent::CanSprint() const
 	return false;
 }
 
+void UAlsCharacterMovementComponent::ApplyDesiredOverlayMode(const FGameplayTag& OverlayModeToApply) 
+{
+	//You can do some verification here to make sure switching overlay mode is valid
+
+	SetOverlayMode(OverlayModeToApply);
+}
+
+void UAlsCharacterMovementComponent::SetDesiredOverlayMode(const FGameplayTag& NewDesiredOverlayMode)
+{
+	DesiredOverlayMode = NewDesiredOverlayMode;
+}
+
 void UAlsCharacterMovementComponent::SetOverlayMode(const FGameplayTag& NewOverlayMode)
 {
 	if (OverlayMode == NewOverlayMode)
@@ -919,6 +943,8 @@ void UAlsCharacterMovementComponent::SetOverlayMode(const FGameplayTag& NewOverl
 	OverlayMode = NewOverlayMode;
 
 	OnOverlayModeChanged(PreviousOverlayMode);
+
+	CharacterOwner->OnOverlayModeChanged(PreviousOverlayMode);
 }
 
 void UAlsCharacterMovementComponent::OnOverlayModeChanged_Implementation(const FGameplayTag& PreviousOverlayMode) {}
@@ -1137,7 +1163,7 @@ void UAlsCharacterMovementComponent::ApplyDesiredJump(bool bRequestedJump, float
 		bCanJump = false;
 		bJustJumped = true;
 		
-		OnJumped_Implementation();
+		OnJumped();
 		
 		return;
 	}

@@ -335,6 +335,19 @@ void AAlsCharacter::DisplayDebugState(const UCanvas* Canvas, const float Scale,
 
 	VerticalLocation += RowOffset;
 
+	static const auto DesiredOverlayModeText{
+		FText::AsCultureInvariant(FName::NameToDisplayString(
+			"DesiredOverlayMode", false))
+	};
+
+	Text.Text = DesiredOverlayModeText;
+	Text.Draw(Canvas->Canvas, {HorizontalLocation, VerticalLocation});
+
+	Text.Text = FText::AsCultureInvariant(FName::NameToDisplayString(UAlsUtility::GetSimpleTagName(GetCharacterMovement()->GetDesiredOverlayMode()).ToString(), false));
+	Text.Draw(Canvas->Canvas, {HorizontalLocation + ColumnOffset, VerticalLocation});
+
+	VerticalLocation += RowOffset;
+	
 	static const auto OverlayModeText{
 		FText::AsCultureInvariant(FName::NameToDisplayString(
 			"OverlayMode", false))
