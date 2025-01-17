@@ -20,7 +20,7 @@ struct ALS_API FAlsVelocityBlendState
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS")
-	uint8 bInitializationRequired : 1 {true};
+	bool bInitializationRequired{true};
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS", Meta = (ClampMin = 0, ClampMax = 1))
 	float ForwardAmount{0.0f};
