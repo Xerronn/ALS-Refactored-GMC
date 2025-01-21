@@ -8,9 +8,6 @@ struct ALS_API FAlsRotateInPlaceState
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS")
-	uint8 bUpdatedThisFrame : 1 {false};
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS")
 	uint8 bRotatingLeft : 1 {false};
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS")

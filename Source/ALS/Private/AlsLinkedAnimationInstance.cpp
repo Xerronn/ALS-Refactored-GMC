@@ -166,14 +166,6 @@ void UAlsLinkedAnimationInstance::RefreshDynamicTransitions()
 	}
 }
 
-void UAlsLinkedAnimationInstance::RefreshRotateInPlace()
-{
-	if (Parent.IsValid())
-	{
-		Parent->RefreshRotateInPlace();
-	}
-}
-
 void UAlsLinkedAnimationInstance::InitializeTurnInPlace()
 {
 	if (Parent.IsValid())

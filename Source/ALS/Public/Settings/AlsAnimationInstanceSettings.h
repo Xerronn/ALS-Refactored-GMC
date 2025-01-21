@@ -48,9 +48,6 @@ public:
 	FAlsDynamicTransitionsSettings DynamicTransitions;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings")
-	FAlsRotateInPlaceSettings RotateInPlace;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings")
 	FAlsGeneralTurnInPlaceSettings TurnInPlace;
 
 public:

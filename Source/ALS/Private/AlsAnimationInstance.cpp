@@ -140,6 +140,7 @@ void UAlsAnimationInstance::NativeUpdateAnimation(const float DeltaTime)
 	
 	RefreshViewOnGameThread();
 	RefreshLocomotionOnGameThread();
+	RefreshRotateInPlaceOnGameThread();
 	RefreshInAirOnGameThread();
 	RefreshFeetOnGameThread();
 	RefreshRagdollingOnGameThread();
@@ -159,7 +160,6 @@ void UAlsAnimationInstance::NativeThreadSafeUpdateAnimation(const float DeltaTim
 	}
 
 	DynamicTransitionsState.bUpdatedThisFrame = false;
-	RotateInPlaceState.bUpdatedThisFrame = false;
 	TurnInPlaceState.bUpdatedThisFrame = false;
 
 	RefreshLayering();
@@ -1491,67 +1491,15 @@ void UAlsAnimationInstance::StopQueuedTransitionAndTurnInPlaceAnimations()
 	TransitionsState.QueuedStopTransitionsBlendOutDuration = 0.0f;
 }
 
-bool UAlsAnimationInstance::IsRotateInPlaceAllowed()
+void UAlsAnimationInstance::RefreshRotateInPlaceOnGameThread()
 {
-	return RotationMode == AlsRotationModeTags::Aiming || ViewMode == AlsViewModeTags::FirstPerson;
-}
+	check(IsInGameThread())
+	
+	const auto& RotateInPlace{Character->GetCharacterMovement()->GetRotateInPlaceState()};
 
-void UAlsAnimationInstance::RefreshRotateInPlace()
-{
-#if WITH_EDITOR
-	if (!IsValid(GetWorld()) || !GetWorld()->IsGameWorld())
-	{
-		return;
-	}
-#endif
-
-	DECLARE_SCOPE_CYCLE_COUNTER(TEXT("UAlsAnimationInstance::RefreshRotateInPlace"),
-	                            STAT_UAlsAnimationInstance_RefreshRotateInPlace, STATGROUP_Als)
-	TRACE_CPUPROFILER_EVENT_SCOPE(__FUNCTION__);
-
-	if (RotateInPlaceState.bUpdatedThisFrame || !IsValid(Settings))
-	{
-		return;
-	}
-
-	RotateInPlaceState.bUpdatedThisFrame = true;
-
-	if (LocomotionState.bMoving || !IsRotateInPlaceAllowed())
-	{
-		RotateInPlaceState.bRotatingLeft = false;
-		RotateInPlaceState.bRotatingRight = false;
-	}
-	else
-	{
-		// Check if the character should rotate left or right by checking if the view yaw angle exceeds the threshold.
-
-		RotateInPlaceState.bRotatingLeft = ViewState.YawAngle < -Settings->RotateInPlace.ViewYawAngleThreshold;
-		RotateInPlaceState.bRotatingRight = ViewState.YawAngle > Settings->RotateInPlace.ViewYawAngleThreshold;
-	}
-
-	static constexpr auto PlayRateInterpolationSpeed{5.0f};
-
-	if (!RotateInPlaceState.bRotatingLeft && !RotateInPlaceState.bRotatingRight)
-	{
-		RotateInPlaceState.PlayRate = bPendingUpdate
-			                              ? Settings->RotateInPlace.PlayRate.X
-			                              : FMath::FInterpTo(RotateInPlaceState.PlayRate, Settings->RotateInPlace.PlayRate.X,
-			                                                 GetDeltaSeconds(), PlayRateInterpolationSpeed);
-		return;
-	}
-
-	// If the character should rotate, set the play rate to scale with the view yaw
-	// speed. This makes the character rotate faster when moving the camera faster.
-
-	const auto PlayRate{
-		FMath::GetMappedRangeValueClamped(Settings->RotateInPlace.ReferenceViewYawSpeed,
-		                                  Settings->RotateInPlace.PlayRate, ViewState.YawSpeed)
-	};
-
-	RotateInPlaceState.PlayRate = bPendingUpdate
-		                              ? PlayRate
-		                              : FMath::FInterpTo(RotateInPlaceState.PlayRate, PlayRate,
-		                                                 GetDeltaSeconds(), PlayRateInterpolationSpeed);
+	RotateInPlaceState.bRotatingLeft = RotateInPlace.bRotatingLeft;
+	RotateInPlaceState.bRotatingRight = RotateInPlace.bRotatingRight;
+	RotateInPlaceState.PlayRate = RotateInPlace.PlayRate;
 }
 
 bool UAlsAnimationInstance::IsTurnInPlaceAllowed()

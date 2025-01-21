@@ -313,12 +313,8 @@ private:
 
 	// Rotate In Place
 
-public:
-	virtual bool IsRotateInPlaceAllowed();
-
 protected:
-	UFUNCTION(BlueprintCallable, Category = "ALS|Animation Instance", Meta = (BlueprintThreadSafe))
-	void RefreshRotateInPlace();
+	void RefreshRotateInPlaceOnGameThread();
 
 	// Turn In Place
 

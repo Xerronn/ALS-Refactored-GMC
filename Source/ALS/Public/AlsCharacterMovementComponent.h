@@ -7,6 +7,7 @@
 #include "State/AlsMantlingState.h"
 #include "State/AlsRagdollingState.h"
 #include "State/AlsRollingState.h"
+#include "State/AlsRotateInPlaceState.h"
 #include "State/AlsViewState.h"
 #include "AlsCharacterMovementComponent.generated.h"
 
@@ -138,6 +139,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State|Als Character", Transient)
 	FAlsMantlingState MantlingState;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State|Als Character", Transient)
+	FAlsRotateInPlaceState RotateInPlaceState;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State|Als Character", Transient)
 	FVector_NetQuantize RagdollTargetLocation{ForceInit};
@@ -467,8 +471,13 @@ protected:
 
 	bool ConstrainAimingRotation(FRotator& ActorRotation, float DeltaTime, bool bApplySecondaryConstraint = false);
 
+public:
+	const FAlsRotateInPlaceState& GetRotateInPlaceState() const;
+
+	bool IsRotateInPlaceAllowed() const;
+	
 private:
-	void ApplyRotationYawSpeedAnimationCurve(float DeltaTime);
+	void ApplyRotateInPlace(float DeltaTime);
 
 	void RefreshInAirRotation(float DeltaTime);
 
@@ -678,4 +687,9 @@ inline const FAlsLocomotionState& UAlsCharacterMovementComponent::GetLocomotionS
 inline const FAlsRagdollingState& UAlsCharacterMovementComponent::GetRagdollingState() const
 {
 	return RagdollingState;
+}
+
+inline const FAlsRotateInPlaceState& UAlsCharacterMovementComponent::GetRotateInPlaceState() const
+{
+	return RotateInPlaceState;
 }

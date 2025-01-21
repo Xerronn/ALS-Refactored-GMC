@@ -4,6 +4,7 @@
 #include "AlsMantlingSettings.h"
 #include "AlsRagdollingSettings.h"
 #include "AlsRollingSettings.h"
+#include "AlsRotateInPlaceSettings.h"
 #include "AlsViewSettings.h"
 #include "AlsCharacterSettings.generated.h"
 
@@ -36,20 +37,23 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings")
 	uint8 bAutoRotateOnAnyInputWhileNotMovingInViewDirectionRotationMode : 1 {true};
 
-	//Ported from AlsAnimationInstance Settings
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS", Meta = (ClampMin = 0))
+	//ported from AlsAnimationInstance Settings
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings")
+	FAlsRotateInPlaceSettings RotateInPlace;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings", Meta = (ClampMin = 0))
 	float VelocityBlendInterpolationSpeed{12.0f};
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings")
 	TObjectPtr<UCurveFloat> RotationYawOffsetForwardCurve;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings")
 	TObjectPtr<UCurveFloat> RotationYawOffsetBackwardCurve;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings")
 	TObjectPtr<UCurveFloat> RotationYawOffsetLeftCurve;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings")
 	TObjectPtr<UCurveFloat> RotationYawOffsetRightCurve;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings")

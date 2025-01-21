@@ -85,9 +85,6 @@ protected:
 	void RefreshDynamicTransitions();
 
 	UFUNCTION(BlueprintCallable, Category = "ALS|Linked Animation Instance", Meta = (BlueprintThreadSafe))
-	void RefreshRotateInPlace();
-
-	UFUNCTION(BlueprintCallable, Category = "ALS|Linked Animation Instance", Meta = (BlueprintThreadSafe))
 	void InitializeTurnInPlace();
 
 	UFUNCTION(BlueprintCallable, Category = "ALS|Linked Animation Instance", Meta = (BlueprintThreadSafe))

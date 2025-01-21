@@ -1190,11 +1190,11 @@ void UAlsCharacterMovementComponent::RefreshGroundedRotation(const float DeltaTi
 		return;
 	}
 
+	ApplyRotateInPlace(DeltaTime);
+
 	if (!LocomotionState.bMoving)
 	{
 		// Not moving.
-
-		ApplyRotationYawSpeedAnimationCurve(DeltaTime);
 
 		if (RefreshCustomGroundedNotMovingRotation(DeltaTime))
 		{
@@ -1441,8 +1441,55 @@ float UAlsCharacterMovementComponent::CalculateGroundedMovingRotationInterpolati
 	                                                  ViewState.YawSpeed / ReferenceViewYawSpeed);
 }
 
-void UAlsCharacterMovementComponent::ApplyRotationYawSpeedAnimationCurve(const float DeltaTime)
+bool UAlsCharacterMovementComponent::IsRotateInPlaceAllowed() const
 {
+	return RotationMode == AlsRotationModeTags::Aiming || ViewMode == AlsViewModeTags::FirstPerson;
+}
+
+void UAlsCharacterMovementComponent::ApplyRotateInPlace(const float DeltaTime)
+{
+	if (!IsValid(Settings))
+	{
+		return;
+	}
+	
+	if (LocomotionState.bMoving || !IsRotateInPlaceAllowed())
+	{
+		RotateInPlaceState.bRotatingLeft = false;
+		RotateInPlaceState.bRotatingRight = false;
+	}
+	else
+	{
+		// Check if the character should rotate left or right by checking if the view yaw angle exceeds the threshold.
+		float ViewStateYawAngle = FMath::UnwindDegrees(UE_REAL_TO_FLOAT(ViewState.Rotation.Yaw - LocomotionState.Rotation.Yaw));
+
+		RotateInPlaceState.bRotatingLeft = ViewStateYawAngle < -Settings->RotateInPlace.ViewYawAngleThreshold;
+		RotateInPlaceState.bRotatingRight = ViewStateYawAngle > Settings->RotateInPlace.ViewYawAngleThreshold;
+	}
+
+	static constexpr auto PlayRateInterpolationSpeed{5.0f};
+
+	if (!RotateInPlaceState.bRotatingLeft && !RotateInPlaceState.bRotatingRight)
+	{
+		RotateInPlaceState.PlayRate = FMath::FInterpTo(RotateInPlaceState.PlayRate, Settings->RotateInPlace.PlayRate.X,
+															 DeltaTime, PlayRateInterpolationSpeed);;
+		return;
+	}
+
+	// If the character should rotate, set the play rate to scale with the view yaw
+	// speed. This makes the character rotate faster when moving the camera faster.
+
+	const auto PlayRate{
+		FMath::GetMappedRangeValueClamped(Settings->RotateInPlace.ReferenceViewYawSpeed,
+										  Settings->RotateInPlace.PlayRate, ViewState.YawSpeed)
+	};
+
+	RotateInPlaceState.PlayRate = FMath::FInterpTo(RotateInPlaceState.PlayRate, PlayRate,
+														 DeltaTime, PlayRateInterpolationSpeed);
+
+	GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("%f,%f"), ViewState.YawSpeed, RotateInPlaceState.PlayRate));
+
+	
 	const auto DeltaYawAngle{CharacterOwner->GetMesh()->GetAnimInstance()->GetCurveValue(UAlsConstants::RotationYawSpeedCurveName()) * DeltaTime};
 	if (FMath::Abs(DeltaYawAngle) > UE_SMALL_NUMBER)
 	{
