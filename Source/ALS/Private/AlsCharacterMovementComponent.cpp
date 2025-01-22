@@ -276,6 +276,22 @@ void UAlsCharacterMovementComponent::BindReplicationData_Implementation()
 		EGMC_SimulationMode::None,
 		EGMC_InterpolationFunction::Linear
 	);
+	
+	BindCompressedSinglePrecisionFloat(
+		RotateInPlaceState.CurveTime,
+		EGMC_PredictionMode::ServerAuth_Output_ClientValidated,
+		EGMC_CombineMode::AlwaysCombine,
+		EGMC_SimulationMode::None,
+		EGMC_InterpolationFunction::Linear
+	);
+
+	BindCompressedSinglePrecisionFloat(
+		RotateInPlaceState.PlayRate,
+		EGMC_PredictionMode::ServerAuth_Output_ClientValidated,
+		EGMC_CombineMode::AlwaysCombine,
+		EGMC_SimulationMode::None,
+		EGMC_InterpolationFunction::Linear
+	);
 	//end of state
 
 	//start of actions
@@ -1448,6 +1464,7 @@ bool UAlsCharacterMovementComponent::IsRotateInPlaceAllowed() const
 
 void UAlsCharacterMovementComponent::ApplyRotateInPlace(const float DeltaTime)
 {
+	//todo: make sure that it only ever performs 90 degree rotations and not less
 	if (!IsValid(Settings))
 	{
 		return;
