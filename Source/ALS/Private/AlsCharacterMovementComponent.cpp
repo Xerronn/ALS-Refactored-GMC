@@ -1457,6 +1457,7 @@ void UAlsCharacterMovementComponent::ApplyRotateInPlace(const float DeltaTime)
 	{
 		RotateInPlaceState.bRotatingLeft = false;
 		RotateInPlaceState.bRotatingRight = false;
+		RotateInPlaceState.CurveTime = 0.0f;
 	}
 	else
 	{
@@ -1472,7 +1473,8 @@ void UAlsCharacterMovementComponent::ApplyRotateInPlace(const float DeltaTime)
 	if (!RotateInPlaceState.bRotatingLeft && !RotateInPlaceState.bRotatingRight)
 	{
 		RotateInPlaceState.PlayRate = FMath::FInterpTo(RotateInPlaceState.PlayRate, Settings->RotateInPlace.PlayRate.X,
-															 DeltaTime, PlayRateInterpolationSpeed);;
+															 DeltaTime, PlayRateInterpolationSpeed);
+		RotateInPlaceState.CurveTime = 0.0f;
 		return;
 	}
 
@@ -1486,11 +1488,39 @@ void UAlsCharacterMovementComponent::ApplyRotateInPlace(const float DeltaTime)
 
 	RotateInPlaceState.PlayRate = FMath::FInterpTo(RotateInPlaceState.PlayRate, PlayRate,
 														 DeltaTime, PlayRateInterpolationSpeed);
-
-	GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("%f,%f"), ViewState.YawSpeed, RotateInPlaceState.PlayRate));
-
 	
-	const auto DeltaYawAngle{CharacterOwner->GetMesh()->GetAnimInstance()->GetCurveValue(UAlsConstants::RotationYawSpeedCurveName()) * DeltaTime};
+	RotateInPlaceState.CurveTime += DeltaTime * PlayRate;
+	if (RotateInPlaceState.CurveTime > 1.0f)
+	{
+		RotateInPlaceState.CurveTime -= 1.0f;
+	}
+	TObjectPtr<UCurveFloat> RotateInPlaceCurve{nullptr};
+	
+	if (Stance == AlsStanceTags::Standing)
+	{
+		if (RotateInPlaceState.bRotatingLeft)
+		{
+			RotateInPlaceCurve = MovementSettings->RotateInPlaceCurves.StandingRotate90Left;
+		}
+		if (RotateInPlaceState.bRotatingRight)
+		{
+			RotateInPlaceCurve = MovementSettings->RotateInPlaceCurves.StandingRotate90Right;
+		}
+
+	} else
+	{
+		if (RotateInPlaceState.bRotatingLeft)
+		{
+			RotateInPlaceCurve = MovementSettings->RotateInPlaceCurves.CrouchingRotate90Left;
+		}
+		if (RotateInPlaceState.bRotatingRight)
+		{
+			RotateInPlaceCurve = MovementSettings->RotateInPlaceCurves.CrouchingRotate90Right;
+		}
+	}
+	
+	const auto DeltaYawAngle{(RotateInPlaceCurve->GetFloatValue(RotateInPlaceState.CurveTime) * DeltaTime) * RotateInPlaceState.PlayRate};
+
 	if (FMath::Abs(DeltaYawAngle) > UE_SMALL_NUMBER)
 	{
 		auto NewRotation{GetActorRotation_GMC()};
