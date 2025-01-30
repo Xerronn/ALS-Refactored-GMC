@@ -63,24 +63,6 @@ struct ALS_API FAlsMovementStanceSettings
 	};
 };
 
-USTRUCT(BlueprintType)
-struct ALS_API FAlsRotateInPlaceCurves
-{
-	GENERATED_BODY()
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS")
-	TObjectPtr<UCurveFloat> StandingRotate90Right;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS")
-	TObjectPtr<UCurveFloat> StandingRotate90Left;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS")
-	TObjectPtr<UCurveFloat> CrouchingRotate90Right;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS")
-	TObjectPtr<UCurveFloat> CrouchingRotate90Left;
-};
-
 UCLASS(Blueprintable, BlueprintType)
 class ALS_API UAlsMovementSettings : public UDataAsset
 {
@@ -99,9 +81,6 @@ public:
 		{AlsRotationModeTags::ViewDirection, {}},
 		{AlsRotationModeTags::Aiming, {}}
 	};
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings")
-	FAlsRotateInPlaceCurves RotateInPlaceCurves;
 
 public:
 #if WITH_EDITOR

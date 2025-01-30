@@ -1517,22 +1517,22 @@ void UAlsCharacterMovementComponent::ApplyRotateInPlace(const float DeltaTime)
 	{
 		if (RotateInPlaceState.bRotatingLeft)
 		{
-			RotateInPlaceCurve = MovementSettings->RotateInPlaceCurves.StandingRotate90Left;
+			RotateInPlaceCurve = Settings->RotateInPlace.StandingRotate90LeftCurve;
 		}
 		if (RotateInPlaceState.bRotatingRight)
 		{
-			RotateInPlaceCurve = MovementSettings->RotateInPlaceCurves.StandingRotate90Right;
+			RotateInPlaceCurve = Settings->RotateInPlace.StandingRotate90RightCurve;
 		}
 
 	} else
 	{
 		if (RotateInPlaceState.bRotatingLeft)
 		{
-			RotateInPlaceCurve = MovementSettings->RotateInPlaceCurves.CrouchingRotate90Left;
+			RotateInPlaceCurve = Settings->RotateInPlace.CrouchingRotate90LeftCurve;
 		}
 		if (RotateInPlaceState.bRotatingRight)
 		{
-			RotateInPlaceCurve = MovementSettings->RotateInPlaceCurves.CrouchingRotate90Right;
+			RotateInPlaceCurve = Settings->RotateInPlace.CrouchingRotate90RightCurve;
 		}
 	}
 	

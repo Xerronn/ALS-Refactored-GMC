@@ -5,6 +5,7 @@
 #include "AlsRagdollingSettings.h"
 #include "AlsRollingSettings.h"
 #include "AlsRotateInPlaceSettings.h"
+#include "AlsTurnInPlaceSettings.h"
 #include "AlsViewSettings.h"
 #include "AlsCharacterSettings.generated.h"
 
@@ -40,6 +41,9 @@ public:
 	//ported from AlsAnimationInstance Settings
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings")
 	FAlsRotateInPlaceSettings RotateInPlace;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings")
+	FAlsGeneralTurnInPlaceSettings TurnInPlace;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings", Meta = (ClampMin = 0))
 	float VelocityBlendInterpolationSpeed{12.0f};
