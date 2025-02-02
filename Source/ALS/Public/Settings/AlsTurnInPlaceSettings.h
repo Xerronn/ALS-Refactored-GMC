@@ -21,6 +21,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings", Meta = (ClampMin = 0.0001, ClampMax = 180, ForceUnits = "deg"))
 	float AnimatedTurnAngle{0.0f};
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings")
+	TObjectPtr<UCurveFloat> RotationYawSpeedCurve;
 };
 
 USTRUCT(BlueprintType)

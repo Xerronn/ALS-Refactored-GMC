@@ -47,9 +47,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings")
 	FAlsDynamicTransitionsSettings DynamicTransitions;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings")
-	FAlsGeneralTurnInPlaceSettings TurnInPlace;
-
 public:
 	UAlsAnimationInstanceSettings();
 
