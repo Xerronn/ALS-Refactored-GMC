@@ -317,16 +317,7 @@ protected:
 	void RefreshRotateInPlaceOnGameThread();
 
 	// Turn In Place
-
-public:
-	virtual bool IsTurnInPlaceAllowed();
-
-protected:
-	UFUNCTION(BlueprintCallable, Category = "ALS|Animation Instance", Meta = (BlueprintThreadSafe))
-	void InitializeTurnInPlace();
-
-	UFUNCTION(BlueprintCallable, Category = "ALS|Animation Instance", Meta = (BlueprintThreadSafe))
-	void RefreshTurnInPlace();
+	void RefreshTurnInPlaceOnGameThread();
 
 private:
 	void PlayQueuedTurnInPlaceAnimation();

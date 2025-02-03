@@ -170,7 +170,7 @@ void UAlsLinkedAnimationInstance::InitializeTurnInPlace()
 {
 	if (Parent.IsValid())
 	{
-		Parent->InitializeTurnInPlace();
+		// Parent->InitializeTurnInPlace();
 	}
 }
 
@@ -178,6 +178,6 @@ void UAlsLinkedAnimationInstance::RefreshTurnInPlace()
 {
 	if (Parent.IsValid())
 	{
-		Parent->RefreshTurnInPlace();
+		// Parent->RefreshTurnInPlace();
 	}
 }

@@ -8,6 +8,7 @@
 #include "State/AlsRagdollingState.h"
 #include "State/AlsRollingState.h"
 #include "State/AlsRotateInPlaceState.h"
+#include "State/AlsTurnInPlaceState.h"
 #include "State/AlsViewState.h"
 #include "AlsCharacterMovementComponent.generated.h"
 
@@ -142,6 +143,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State|Als Character", Transient)
 	FAlsRotateInPlaceState RotateInPlaceState;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State|Als Character", Transient)
+	FAlsTurnInPlaceState TurnInPlaceState;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State|Als Character", Transient)
 	FVector_NetQuantize RagdollTargetLocation{ForceInit};
@@ -474,12 +478,22 @@ protected:
 public:
 	const FAlsRotateInPlaceState& GetRotateInPlaceState() const;
 
+	const FAlsTurnInPlaceState& GetTurnInPlaceState() const;
+	
 	bool IsRotateInPlaceAllowed() const;
 	
 private:
 	void ApplyRotateInPlace(float DeltaTime);
 
 	void RefreshInAirRotation(float DeltaTime);
+
+public:
+	virtual bool IsTurnInPlaceAllowed();
+
+protected:
+	void InitializeTurnInPlace();
+
+	void ApplyTurnInPlace(float DeltaTime);
 
 protected:
 	virtual bool RefreshCustomInAirRotation(float DeltaTime);
@@ -692,4 +706,9 @@ inline const FAlsRagdollingState& UAlsCharacterMovementComponent::GetRagdollingS
 inline const FAlsRotateInPlaceState& UAlsCharacterMovementComponent::GetRotateInPlaceState() const
 {
 	return RotateInPlaceState;
+}
+
+inline const FAlsTurnInPlaceState& UAlsCharacterMovementComponent::GetTurnInPlaceState() const
+{
+	return TurnInPlaceState;
 }

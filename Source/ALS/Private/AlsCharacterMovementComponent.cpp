@@ -1550,6 +1550,115 @@ void UAlsCharacterMovementComponent::ApplyRotateInPlace(const float DeltaTime)
 	}
 }
 
+bool UAlsCharacterMovementComponent::IsTurnInPlaceAllowed()
+{
+	return RotationMode == AlsRotationModeTags::ViewDirection && ViewMode != AlsViewModeTags::FirstPerson;
+}
+
+void UAlsCharacterMovementComponent::InitializeTurnInPlace()
+{
+	TurnInPlaceState.ActivationDelay = 0.0f;
+}
+
+void UAlsCharacterMovementComponent::ApplyTurnInPlace(float DeltaTime)
+{
+	TurnInPlaceState.BlendDuration = Settings->TurnInPlace.BlendDuration;
+	// if (TurnInPlaceState.bUpdatedThisFrame || !IsValid(Settings))
+	// {
+	// 	return;
+	// }
+	//
+	// TurnInPlaceState.bUpdatedThisFrame = true;
+	//
+	// if (!TransitionsState.bTransitionsAllowed || !IsTurnInPlaceAllowed())
+	// {
+	// 	TurnInPlaceState.ActivationDelay = 0.0f;
+	// 	return;
+	// }
+	//
+	// // Check if the view yaw speed is below the threshold and if the view yaw angle is outside the
+	// // threshold. If so, begin counting the activation delay time. If not, reset the activation delay
+	// // time. This ensures the conditions remain true for a sustained time before turning in place.
+	//
+	// if (ViewState.YawSpeed >= Settings->TurnInPlace.ViewYawSpeedThreshold ||
+	//     FMath::Abs(ViewState.YawAngle) <= Settings->TurnInPlace.ViewYawAngleThreshold)
+	// {
+	// 	TurnInPlaceState.ActivationDelay = 0.0f;
+	// 	return;
+	// }
+	//
+	// TurnInPlaceState.ActivationDelay = TurnInPlaceState.ActivationDelay + GetDeltaSeconds();
+	//
+	// const auto ActivationDelay{
+	// 	FMath::GetMappedRangeValueClamped({Settings->TurnInPlace.ViewYawAngleThreshold, 180.0f},
+	// 	                                  Settings->TurnInPlace.ViewYawAngleToActivationDelay,
+	// 	                                  FMath::Abs(ViewState.YawAngle))
+	// };
+	//
+	// // Check if the activation delay time exceeds the set delay (mapped to the view yaw angle). If so, start a turn in place.
+	//
+	// if (TurnInPlaceState.ActivationDelay <= ActivationDelay)
+	// {
+	// 	return;
+	// }
+	//
+	// // Select settings based on turn angle and stance.
+	//
+	// const auto bTurnLeft{UAlsRotation::RemapAngleForCounterClockwiseRotation(ViewState.YawAngle) <= 0.0f};
+	//
+	// UAlsTurnInPlaceSettings* TurnInPlaceSettings{nullptr};
+	// FName TurnInPlaceSlotName;
+	//
+	// if (Stance == AlsStanceTags::Standing)
+	// {
+	// 	TurnInPlaceSlotName = UAlsConstants::TurnInPlaceStandingSlotName();
+	//
+	// 	if (FMath::Abs(ViewState.YawAngle) < Settings->TurnInPlace.Turn180AngleThreshold)
+	// 	{
+	// 		TurnInPlaceSettings = bTurnLeft
+	// 			                      ? Settings->TurnInPlace.StandingTurn90Left
+	// 			                      : Settings->TurnInPlace.StandingTurn90Right;
+	// 	}
+	// 	else
+	// 	{
+	// 		TurnInPlaceSettings = bTurnLeft
+	// 			                      ? Settings->TurnInPlace.StandingTurn180Left
+	// 			                      : Settings->TurnInPlace.StandingTurn180Right;
+	// 	}
+	// }
+	// else if (Stance == AlsStanceTags::Crouching)
+	// {
+	// 	TurnInPlaceSlotName = UAlsConstants::TurnInPlaceCrouchingSlotName();
+	//
+	// 	if (FMath::Abs(ViewState.YawAngle) < Settings->TurnInPlace.Turn180AngleThreshold)
+	// 	{
+	// 		TurnInPlaceSettings = bTurnLeft
+	// 			                      ? Settings->TurnInPlace.CrouchingTurn90Left
+	// 			                      : Settings->TurnInPlace.CrouchingTurn90Right;
+	// 	}
+	// 	else
+	// 	{
+	// 		TurnInPlaceSettings = bTurnLeft
+	// 			                      ? Settings->TurnInPlace.CrouchingTurn180Left
+	// 			                      : Settings->TurnInPlace.CrouchingTurn180Right;
+	// 	}
+	// }
+	//
+	// if (IsValid(TurnInPlaceSettings) && ALS_ENSURE(IsValid(TurnInPlaceSettings->Sequence)))
+	// {
+	// 	// Animation montages can't be played in the worker thread, so queue them up to play later in the game thread.
+	//
+	// 	TurnInPlaceState.QueuedSettings = TurnInPlaceSettings;
+	// 	TurnInPlaceState.QueuedSlotName = TurnInPlaceSlotName;
+	// 	TurnInPlaceState.QueuedTurnYawAngle = ViewState.YawAngle;
+	//
+	// 	if (IsInGameThread())
+	// 	{
+	// 		PlayQueuedTurnInPlaceAnimation();
+	// 	}
+	// }
+}
+
 void UAlsCharacterMovementComponent::RefreshInAirRotation(const float DeltaTime)
 {
 	if (LocomotionAction.IsValid() || !IsAirborne())

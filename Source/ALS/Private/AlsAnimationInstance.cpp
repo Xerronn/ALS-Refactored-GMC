@@ -141,6 +141,7 @@ void UAlsAnimationInstance::NativeUpdateAnimation(const float DeltaTime)
 	RefreshViewOnGameThread();
 	RefreshLocomotionOnGameThread();
 	RefreshRotateInPlaceOnGameThread();
+	RefreshTurnInPlaceOnGameThread();
 	RefreshInAirOnGameThread();
 	RefreshFeetOnGameThread();
 	RefreshRagdollingOnGameThread();
@@ -160,7 +161,6 @@ void UAlsAnimationInstance::NativeThreadSafeUpdateAnimation(const float DeltaTim
 	}
 
 	DynamicTransitionsState.bUpdatedThisFrame = false;
-	TurnInPlaceState.bUpdatedThisFrame = false;
 
 	RefreshLayering();
 	RefreshPose();
@@ -1502,123 +1502,18 @@ void UAlsAnimationInstance::RefreshRotateInPlaceOnGameThread()
 	RotateInPlaceState.PlayRate = RotateInPlace.PlayRate;
 }
 
-bool UAlsAnimationInstance::IsTurnInPlaceAllowed()
+void UAlsAnimationInstance::RefreshTurnInPlaceOnGameThread()
 {
-	return RotationMode == AlsRotationModeTags::ViewDirection && ViewMode != AlsViewModeTags::FirstPerson;
-}
+	check(IsInGameThread())
+	
+	const auto& TurnInPlace{Character->GetCharacterMovement()->GetTurnInPlaceState()};
 
-void UAlsAnimationInstance::InitializeTurnInPlace()
-{
-	TurnInPlaceState.ActivationDelay = 0.0f;
-}
-
-void UAlsAnimationInstance::RefreshTurnInPlace()
-{
-#if WITH_EDITOR
-	if (!IsValid(GetWorld()) || !GetWorld()->IsGameWorld())
-	{
-		return;
-	}
-#endif
-
-	DECLARE_SCOPE_CYCLE_COUNTER(TEXT("UAlsAnimationInstance::RefreshTurnInPlace"),
-	                            STAT_UAlsAnimationInstance_RefreshTurnInPlace, STATGROUP_Als)
-	TRACE_CPUPROFILER_EVENT_SCOPE(__FUNCTION__);
-
-	if (TurnInPlaceState.bUpdatedThisFrame || !IsValid(Settings))
-	{
-		return;
-	}
-
-	TurnInPlaceState.bUpdatedThisFrame = true;
-
-	if (!TransitionsState.bTransitionsAllowed || !IsTurnInPlaceAllowed())
-	{
-		TurnInPlaceState.ActivationDelay = 0.0f;
-		return;
-	}
-
-	// Check if the view yaw speed is below the threshold and if the view yaw angle is outside the
-	// threshold. If so, begin counting the activation delay time. If not, reset the activation delay
-	// time. This ensures the conditions remain true for a sustained time before turning in place.
-
-	if (ViewState.YawSpeed >= Settings->TurnInPlace.ViewYawSpeedThreshold ||
-	    FMath::Abs(ViewState.YawAngle) <= Settings->TurnInPlace.ViewYawAngleThreshold)
-	{
-		TurnInPlaceState.ActivationDelay = 0.0f;
-		return;
-	}
-
-	TurnInPlaceState.ActivationDelay = TurnInPlaceState.ActivationDelay + GetDeltaSeconds();
-
-	const auto ActivationDelay{
-		FMath::GetMappedRangeValueClamped({Settings->TurnInPlace.ViewYawAngleThreshold, 180.0f},
-		                                  Settings->TurnInPlace.ViewYawAngleToActivationDelay,
-		                                  FMath::Abs(ViewState.YawAngle))
-	};
-
-	// Check if the activation delay time exceeds the set delay (mapped to the view yaw angle). If so, start a turn in place.
-
-	if (TurnInPlaceState.ActivationDelay <= ActivationDelay)
-	{
-		return;
-	}
-
-	// Select settings based on turn angle and stance.
-
-	const auto bTurnLeft{UAlsRotation::RemapAngleForCounterClockwiseRotation(ViewState.YawAngle) <= 0.0f};
-
-	UAlsTurnInPlaceSettings* TurnInPlaceSettings{nullptr};
-	FName TurnInPlaceSlotName;
-
-	if (Stance == AlsStanceTags::Standing)
-	{
-		TurnInPlaceSlotName = UAlsConstants::TurnInPlaceStandingSlotName();
-
-		if (FMath::Abs(ViewState.YawAngle) < Settings->TurnInPlace.Turn180AngleThreshold)
-		{
-			TurnInPlaceSettings = bTurnLeft
-				                      ? Settings->TurnInPlace.StandingTurn90Left
-				                      : Settings->TurnInPlace.StandingTurn90Right;
-		}
-		else
-		{
-			TurnInPlaceSettings = bTurnLeft
-				                      ? Settings->TurnInPlace.StandingTurn180Left
-				                      : Settings->TurnInPlace.StandingTurn180Right;
-		}
-	}
-	else if (Stance == AlsStanceTags::Crouching)
-	{
-		TurnInPlaceSlotName = UAlsConstants::TurnInPlaceCrouchingSlotName();
-
-		if (FMath::Abs(ViewState.YawAngle) < Settings->TurnInPlace.Turn180AngleThreshold)
-		{
-			TurnInPlaceSettings = bTurnLeft
-				                      ? Settings->TurnInPlace.CrouchingTurn90Left
-				                      : Settings->TurnInPlace.CrouchingTurn90Right;
-		}
-		else
-		{
-			TurnInPlaceSettings = bTurnLeft
-				                      ? Settings->TurnInPlace.CrouchingTurn180Left
-				                      : Settings->TurnInPlace.CrouchingTurn180Right;
-		}
-	}
-
-	if (IsValid(TurnInPlaceSettings) && ALS_ENSURE(IsValid(TurnInPlaceSettings->Sequence)))
-	{
-		// Animation montages can't be played in the worker thread, so queue them up to play later in the game thread.
-
-		TurnInPlaceState.QueuedSettings = TurnInPlaceSettings;
-		TurnInPlaceState.QueuedSlotName = TurnInPlaceSlotName;
-		TurnInPlaceState.QueuedTurnYawAngle = ViewState.YawAngle;
-
-		if (IsInGameThread())
-		{
-			PlayQueuedTurnInPlaceAnimation();
-		}
-	}
+	TurnInPlaceState.ActivationDelay = TurnInPlace.ActivationDelay;
+	TurnInPlaceState.BlendDuration = TurnInPlace.BlendDuration;
+	TurnInPlaceState.PlayRate = TurnInPlace.PlayRate;
+	TurnInPlaceState.QueuedSettings = TurnInPlace.QueuedSettings;
+	TurnInPlaceState.QueuedSlotName = TurnInPlace.QueuedSlotName;
+	TurnInPlaceState.QueuedTurnYawAngle = TurnInPlace.QueuedTurnYawAngle;
 }
 
 void UAlsAnimationInstance::PlayQueuedTurnInPlaceAnimation()
@@ -1633,7 +1528,7 @@ void UAlsAnimationInstance::PlayQueuedTurnInPlaceAnimation()
 	const auto* TurnInPlaceSettings{TurnInPlaceState.QueuedSettings.Get()};
 
 	PlaySlotAnimationAsDynamicMontage(TurnInPlaceSettings->Sequence, TurnInPlaceState.QueuedSlotName,
-	                                  Settings->TurnInPlace.BlendDuration, Settings->TurnInPlace.BlendDuration,
+	                                  TurnInPlaceState.BlendDuration, TurnInPlaceState.BlendDuration,
 	                                  TurnInPlaceSettings->PlayRate, 1, 0.0f);
 
 	// Scale the rotation yaw delta (gets scaled in animation graph) to compensate for play rate and turn angle (if allowed).

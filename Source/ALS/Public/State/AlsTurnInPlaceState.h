@@ -9,9 +9,6 @@ struct ALS_API FAlsTurnInPlaceState
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS")
-	uint8 bUpdatedThisFrame : 1 {false};
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS", Meta = (ForceUnits = "s"))
 	float ActivationDelay{0.0f};
 
@@ -26,4 +23,7 @@ struct ALS_API FAlsTurnInPlaceState
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS", Meta = (ClampMin = 0, ForceUnits = "x"))
 	float PlayRate{1.0f};
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS", Meta = (ClampMin = 0, ForceUnits = "s"))
+	float BlendDuration{0.2f};
 };
