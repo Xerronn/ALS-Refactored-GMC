@@ -317,10 +317,9 @@ protected:
 	void RefreshRotateInPlaceOnGameThread();
 
 	// Turn In Place
-	void RefreshTurnInPlaceOnGameThread();
 
-private:
-	void PlayQueuedTurnInPlaceAnimation();
+public:
+	void PlayQueuedTurnInPlaceAnimation(FAlsTurnInPlaceState& TurnInPlaceState);
 
 	// Ragdolling
 

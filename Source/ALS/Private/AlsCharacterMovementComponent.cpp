@@ -1,5 +1,6 @@
 #include "AlsCharacterMovementComponent.h"
 
+#include "AlsAnimationInstance.h"
 #include "AlsCharacter.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -1207,6 +1208,7 @@ void UAlsCharacterMovementComponent::RefreshGroundedRotation(const float DeltaTi
 	}
 
 	ApplyRotateInPlace(DeltaTime);
+	ApplyTurnInPlace(DeltaTime);
 
 	if (!LocomotionState.bMoving)
 	{
@@ -1507,6 +1509,7 @@ void UAlsCharacterMovementComponent::ApplyRotateInPlace(const float DeltaTime)
 														 DeltaTime, PlayRateInterpolationSpeed);
 	
 	RotateInPlaceState.CurveTime += DeltaTime * PlayRate;
+	//todo: come up with a way to not hard code the 1.0 curve length
 	if (RotateInPlaceState.CurveTime > 1.0f)
 	{
 		RotateInPlaceState.CurveTime -= 1.0f;
@@ -1552,7 +1555,7 @@ void UAlsCharacterMovementComponent::ApplyRotateInPlace(const float DeltaTime)
 
 bool UAlsCharacterMovementComponent::IsTurnInPlaceAllowed()
 {
-	return RotationMode == AlsRotationModeTags::ViewDirection && ViewMode != AlsViewModeTags::FirstPerson;
+	return RotationMode == AlsRotationModeTags::ViewDirection && ViewMode != AlsViewModeTags::FirstPerson && !LocomotionState.bMoving;
 }
 
 void UAlsCharacterMovementComponent::InitializeTurnInPlace()
@@ -1563,100 +1566,124 @@ void UAlsCharacterMovementComponent::InitializeTurnInPlace()
 void UAlsCharacterMovementComponent::ApplyTurnInPlace(float DeltaTime)
 {
 	TurnInPlaceState.BlendDuration = Settings->TurnInPlace.BlendDuration;
-	// if (TurnInPlaceState.bUpdatedThisFrame || !IsValid(Settings))
-	// {
-	// 	return;
-	// }
-	//
-	// TurnInPlaceState.bUpdatedThisFrame = true;
-	//
-	// if (!TransitionsState.bTransitionsAllowed || !IsTurnInPlaceAllowed())
-	// {
-	// 	TurnInPlaceState.ActivationDelay = 0.0f;
-	// 	return;
-	// }
-	//
-	// // Check if the view yaw speed is below the threshold and if the view yaw angle is outside the
-	// // threshold. If so, begin counting the activation delay time. If not, reset the activation delay
-	// // time. This ensures the conditions remain true for a sustained time before turning in place.
-	//
-	// if (ViewState.YawSpeed >= Settings->TurnInPlace.ViewYawSpeedThreshold ||
-	//     FMath::Abs(ViewState.YawAngle) <= Settings->TurnInPlace.ViewYawAngleThreshold)
-	// {
-	// 	TurnInPlaceState.ActivationDelay = 0.0f;
-	// 	return;
-	// }
-	//
-	// TurnInPlaceState.ActivationDelay = TurnInPlaceState.ActivationDelay + GetDeltaSeconds();
-	//
-	// const auto ActivationDelay{
-	// 	FMath::GetMappedRangeValueClamped({Settings->TurnInPlace.ViewYawAngleThreshold, 180.0f},
-	// 	                                  Settings->TurnInPlace.ViewYawAngleToActivationDelay,
-	// 	                                  FMath::Abs(ViewState.YawAngle))
-	// };
-	//
-	// // Check if the activation delay time exceeds the set delay (mapped to the view yaw angle). If so, start a turn in place.
-	//
-	// if (TurnInPlaceState.ActivationDelay <= ActivationDelay)
-	// {
-	// 	return;
-	// }
-	//
-	// // Select settings based on turn angle and stance.
-	//
-	// const auto bTurnLeft{UAlsRotation::RemapAngleForCounterClockwiseRotation(ViewState.YawAngle) <= 0.0f};
-	//
-	// UAlsTurnInPlaceSettings* TurnInPlaceSettings{nullptr};
-	// FName TurnInPlaceSlotName;
-	//
-	// if (Stance == AlsStanceTags::Standing)
-	// {
-	// 	TurnInPlaceSlotName = UAlsConstants::TurnInPlaceStandingSlotName();
-	//
-	// 	if (FMath::Abs(ViewState.YawAngle) < Settings->TurnInPlace.Turn180AngleThreshold)
-	// 	{
-	// 		TurnInPlaceSettings = bTurnLeft
-	// 			                      ? Settings->TurnInPlace.StandingTurn90Left
-	// 			                      : Settings->TurnInPlace.StandingTurn90Right;
-	// 	}
-	// 	else
-	// 	{
-	// 		TurnInPlaceSettings = bTurnLeft
-	// 			                      ? Settings->TurnInPlace.StandingTurn180Left
-	// 			                      : Settings->TurnInPlace.StandingTurn180Right;
-	// 	}
-	// }
-	// else if (Stance == AlsStanceTags::Crouching)
-	// {
-	// 	TurnInPlaceSlotName = UAlsConstants::TurnInPlaceCrouchingSlotName();
-	//
-	// 	if (FMath::Abs(ViewState.YawAngle) < Settings->TurnInPlace.Turn180AngleThreshold)
-	// 	{
-	// 		TurnInPlaceSettings = bTurnLeft
-	// 			                      ? Settings->TurnInPlace.CrouchingTurn90Left
-	// 			                      : Settings->TurnInPlace.CrouchingTurn90Right;
-	// 	}
-	// 	else
-	// 	{
-	// 		TurnInPlaceSettings = bTurnLeft
-	// 			                      ? Settings->TurnInPlace.CrouchingTurn180Left
-	// 			                      : Settings->TurnInPlace.CrouchingTurn180Right;
-	// 	}
-	// }
-	//
-	// if (IsValid(TurnInPlaceSettings) && ALS_ENSURE(IsValid(TurnInPlaceSettings->Sequence)))
-	// {
-	// 	// Animation montages can't be played in the worker thread, so queue them up to play later in the game thread.
-	//
-	// 	TurnInPlaceState.QueuedSettings = TurnInPlaceSettings;
-	// 	TurnInPlaceState.QueuedSlotName = TurnInPlaceSlotName;
-	// 	TurnInPlaceState.QueuedTurnYawAngle = ViewState.YawAngle;
-	//
-	// 	if (IsInGameThread())
-	// 	{
-	// 		PlayQueuedTurnInPlaceAnimation();
-	// 	}
-	// }
+	
+	if (!IsValid(Settings))
+	{
+		return;
+	}
+
+	//todo: come up with a way to not hard code the 2.0 and 1.2
+	if (!IsTurnInPlaceAllowed() || TurnInPlaceState.CurveTime > 2.0f / 1.2f)
+	{
+		TurnInPlaceState.ActivationDelay = 0.0f;
+		TurnInPlaceState.CurveTime = 0.0f;
+		return;
+	}
+	
+	// Check if the view yaw speed is below the threshold and if the view yaw angle is outside the
+	// threshold. If so, begin counting the activation delay time. If not, reset the activation delay
+	// time. This ensures the conditions remain true for a sustained time before turning in place.
+	float ViewStateYawAngle = FMath::UnwindDegrees(UE_REAL_TO_FLOAT(ViewState.Rotation.Yaw - LocomotionState.Rotation.Yaw));
+	if (TurnInPlaceState.CurveTime < UE_SMALL_NUMBER)
+	{
+		if (ViewState.YawSpeed >= Settings->TurnInPlace.ViewYawSpeedThreshold ||
+		    FMath::Abs(ViewStateYawAngle) <= Settings->TurnInPlace.ViewYawAngleThreshold)
+		{
+			TurnInPlaceState.ActivationDelay = 0.0f;
+			TurnInPlaceState.CurveTime = 0.0f;
+			return;
+		}
+		
+		TurnInPlaceState.ActivationDelay = TurnInPlaceState.ActivationDelay + DeltaTime;
+		
+		const auto ActivationDelay{
+			FMath::GetMappedRangeValueClamped({Settings->TurnInPlace.ViewYawAngleThreshold, 180.0f},
+			                                  Settings->TurnInPlace.ViewYawAngleToActivationDelay,
+			                                  FMath::Abs(ViewStateYawAngle))
+		};
+		
+		// Check if the activation delay time exceeds the set delay (mapped to the view yaw angle). If so, start a turn in place.
+		
+		if (TurnInPlaceState.ActivationDelay <= ActivationDelay)
+		{
+			return;
+		}
+	
+		// Select settings based on turn angle and stance.
+
+		const auto bTurnLeft{UAlsRotation::RemapAngleForCounterClockwiseRotation(ViewStateYawAngle) <= 0.0f};
+		
+		if (Stance == AlsStanceTags::Standing)
+		{
+			TurnInPlaceState.TurnInPlaceSlotName = UAlsConstants::TurnInPlaceStandingSlotName();
+		
+			if (FMath::Abs(ViewStateYawAngle) < Settings->TurnInPlace.Turn180AngleThreshold)
+			{
+				GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("90")));
+				TurnInPlaceState.TurnInPlaceSettings = bTurnLeft
+										  ? Settings->TurnInPlace.StandingTurn90Left
+										  : Settings->TurnInPlace.StandingTurn90Right;
+			}
+			else
+			{
+				GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("180")));
+				TurnInPlaceState.TurnInPlaceSettings = bTurnLeft
+										  ? Settings->TurnInPlace.StandingTurn180Left
+										  : Settings->TurnInPlace.StandingTurn180Right;
+			}
+		}
+		else if (Stance == AlsStanceTags::Crouching)
+		{
+			TurnInPlaceState.TurnInPlaceSlotName = UAlsConstants::TurnInPlaceCrouchingSlotName();
+		
+			if (FMath::Abs(ViewStateYawAngle) < Settings->TurnInPlace.Turn180AngleThreshold)
+			{
+				TurnInPlaceState.TurnInPlaceSettings = bTurnLeft
+										  ? Settings->TurnInPlace.CrouchingTurn90Left
+										  : Settings->TurnInPlace.CrouchingTurn90Right;
+			}
+			else
+			{
+				TurnInPlaceState.TurnInPlaceSettings = bTurnLeft
+										  ? Settings->TurnInPlace.CrouchingTurn180Left
+										  : Settings->TurnInPlace.CrouchingTurn180Right;
+			}
+		}
+	}
+	
+	if (IsValid(TurnInPlaceState.TurnInPlaceSettings) && ALS_ENSURE(IsValid(TurnInPlaceState.TurnInPlaceSettings->Sequence)))
+	{
+		TurnInPlaceState.QueuedSettings = TurnInPlaceState.TurnInPlaceSettings;
+		TurnInPlaceState.QueuedSlotName = TurnInPlaceState.TurnInPlaceSlotName;
+		TurnInPlaceState.QueuedTurnYawAngle = ViewStateYawAngle;
+		
+		float PlayRate = TurnInPlaceState.TurnInPlaceSettings->PlayRate;
+		if (TurnInPlaceState.TurnInPlaceSettings->bScalePlayRateByAnimatedTurnAngle)
+		{
+			PlayRate *= FMath::Abs(TurnInPlaceState.QueuedTurnYawAngle / TurnInPlaceState.TurnInPlaceSettings->AnimatedTurnAngle);
+		}
+
+		const auto DeltaYawAngle{(TurnInPlaceState.TurnInPlaceSettings->RotationYawSpeedCurve->GetFloatValue(TurnInPlaceState.CurveTime) * DeltaTime) * PlayRate};
+		
+		if (FMath::Abs(DeltaYawAngle) > UE_SMALL_NUMBER)
+		{
+			auto NewRotation{GetActorRotation_GMC()};
+			NewRotation.Yaw += DeltaYawAngle;
+
+			SetActorRotation_GMC(NewRotation, false);
+
+			RefreshLocomotionLocationAndRotation();
+			RefreshTargetYawAngleUsingLocomotionRotation();
+		}
+		
+		if (TurnInPlaceState.CurveTime < UE_SMALL_NUMBER)
+		{
+			CharacterOwner->GetAnimInstance()->PlayQueuedTurnInPlaceAnimation(TurnInPlaceState);
+		}
+
+		TurnInPlaceState.CurveTime += DeltaTime;
+
+	}
 }
 
 void UAlsCharacterMovementComponent::RefreshInAirRotation(const float DeltaTime)

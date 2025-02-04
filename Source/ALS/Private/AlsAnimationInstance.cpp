@@ -141,7 +141,6 @@ void UAlsAnimationInstance::NativeUpdateAnimation(const float DeltaTime)
 	RefreshViewOnGameThread();
 	RefreshLocomotionOnGameThread();
 	RefreshRotateInPlaceOnGameThread();
-	RefreshTurnInPlaceOnGameThread();
 	RefreshInAirOnGameThread();
 	RefreshFeetOnGameThread();
 	RefreshRagdollingOnGameThread();
@@ -184,7 +183,7 @@ void UAlsAnimationInstance::NativePostUpdateAnimation()
 	}
 
 	PlayQueuedTransitionAnimation();
-	PlayQueuedTurnInPlaceAnimation();
+	PlayQueuedTurnInPlaceAnimation(TurnInPlaceState);
 	StopQueuedTransitionAndTurnInPlaceAnimations();
 
 #if WITH_EDITORONLY_DATA && ENABLE_DRAW_DEBUG
@@ -1502,23 +1501,16 @@ void UAlsAnimationInstance::RefreshRotateInPlaceOnGameThread()
 	RotateInPlaceState.PlayRate = RotateInPlace.PlayRate;
 }
 
-void UAlsAnimationInstance::RefreshTurnInPlaceOnGameThread()
+void UAlsAnimationInstance::PlayQueuedTurnInPlaceAnimation(FAlsTurnInPlaceState& CharacterTurnInPlaceState)
 {
 	check(IsInGameThread())
-	
-	const auto& TurnInPlace{Character->GetCharacterMovement()->GetTurnInPlaceState()};
 
-	TurnInPlaceState.ActivationDelay = TurnInPlace.ActivationDelay;
-	TurnInPlaceState.BlendDuration = TurnInPlace.BlendDuration;
-	TurnInPlaceState.PlayRate = TurnInPlace.PlayRate;
-	TurnInPlaceState.QueuedSettings = TurnInPlace.QueuedSettings;
-	TurnInPlaceState.QueuedSlotName = TurnInPlace.QueuedSlotName;
-	TurnInPlaceState.QueuedTurnYawAngle = TurnInPlace.QueuedTurnYawAngle;
-}
-
-void UAlsAnimationInstance::PlayQueuedTurnInPlaceAnimation()
-{
-	check(IsInGameThread())
+	TurnInPlaceState.ActivationDelay = CharacterTurnInPlaceState.ActivationDelay;
+	TurnInPlaceState.BlendDuration = CharacterTurnInPlaceState.BlendDuration;
+	TurnInPlaceState.PlayRate = CharacterTurnInPlaceState.PlayRate;
+	TurnInPlaceState.QueuedSettings = CharacterTurnInPlaceState.QueuedSettings;
+	TurnInPlaceState.QueuedSlotName = CharacterTurnInPlaceState.QueuedSlotName;
+	TurnInPlaceState.QueuedTurnYawAngle = CharacterTurnInPlaceState.QueuedTurnYawAngle;
 
 	if (TransitionsState.bStopTransitionsQueued || !IsValid(TurnInPlaceState.QueuedSettings))
 	{
