@@ -287,6 +287,22 @@ void UAlsCharacterMovementComponent::BindReplicationData_Implementation()
 	);
 
 	BindCompressedSinglePrecisionFloat(
+		TurnInPlaceState.CurveTime,
+		EGMC_PredictionMode::ServerAuth_Output_ClientValidated,
+		EGMC_CombineMode::AlwaysCombine,
+		EGMC_SimulationMode::None,
+		EGMC_InterpolationFunction::Linear
+	);
+
+	BindCompressedSinglePrecisionFloat(
+		TurnInPlaceState.ActivationDelay,
+		EGMC_PredictionMode::ServerAuth_Output_ClientValidated,
+		EGMC_CombineMode::AlwaysCombine,
+		EGMC_SimulationMode::None,
+		EGMC_InterpolationFunction::Linear
+	);
+
+	BindCompressedSinglePrecisionFloat(
 		RotateInPlaceState.PlayRate,
 		EGMC_PredictionMode::ServerAuth_Output_ClientValidated,
 		EGMC_CombineMode::AlwaysCombine,
@@ -1461,7 +1477,7 @@ float UAlsCharacterMovementComponent::CalculateGroundedMovingRotationInterpolati
 
 bool UAlsCharacterMovementComponent::IsRotateInPlaceAllowed() const
 {
-	return RotationMode == AlsRotationModeTags::Aiming || ViewMode == AlsViewModeTags::FirstPerson;
+	return (RotationMode == AlsRotationModeTags::Aiming || ViewMode == AlsViewModeTags::FirstPerson) && IsMovingOnGround();
 }
 
 void UAlsCharacterMovementComponent::ApplyRotateInPlace(const float DeltaTime)
@@ -1555,12 +1571,8 @@ void UAlsCharacterMovementComponent::ApplyRotateInPlace(const float DeltaTime)
 
 bool UAlsCharacterMovementComponent::IsTurnInPlaceAllowed()
 {
-	return RotationMode == AlsRotationModeTags::ViewDirection && ViewMode != AlsViewModeTags::FirstPerson && !LocomotionState.bMoving;
-}
-
-void UAlsCharacterMovementComponent::InitializeTurnInPlace()
-{
-	TurnInPlaceState.ActivationDelay = 0.0f;
+	return RotationMode == AlsRotationModeTags::ViewDirection && ViewMode != AlsViewModeTags::FirstPerson &&
+		!LocomotionState.bMoving && IsMovingOnGround();
 }
 
 void UAlsCharacterMovementComponent::ApplyTurnInPlace(float DeltaTime)
@@ -1619,14 +1631,12 @@ void UAlsCharacterMovementComponent::ApplyTurnInPlace(float DeltaTime)
 		
 			if (FMath::Abs(ViewStateYawAngle) < Settings->TurnInPlace.Turn180AngleThreshold)
 			{
-				GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("90")));
 				TurnInPlaceState.TurnInPlaceSettings = bTurnLeft
 										  ? Settings->TurnInPlace.StandingTurn90Left
 										  : Settings->TurnInPlace.StandingTurn90Right;
 			}
 			else
 			{
-				GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("180")));
 				TurnInPlaceState.TurnInPlaceSettings = bTurnLeft
 										  ? Settings->TurnInPlace.StandingTurn180Left
 										  : Settings->TurnInPlace.StandingTurn180Right;
@@ -1653,9 +1663,15 @@ void UAlsCharacterMovementComponent::ApplyTurnInPlace(float DeltaTime)
 	
 	if (IsValid(TurnInPlaceState.TurnInPlaceSettings) && ALS_ENSURE(IsValid(TurnInPlaceState.TurnInPlaceSettings->Sequence)))
 	{
-		TurnInPlaceState.QueuedSettings = TurnInPlaceState.TurnInPlaceSettings;
-		TurnInPlaceState.QueuedSlotName = TurnInPlaceState.TurnInPlaceSlotName;
-		TurnInPlaceState.QueuedTurnYawAngle = ViewStateYawAngle;
+		// only do this once per turn
+		if (TurnInPlaceState.CurveTime < UE_SMALL_NUMBER)
+		{
+			TurnInPlaceState.QueuedSettings = TurnInPlaceState.TurnInPlaceSettings;
+			TurnInPlaceState.QueuedSlotName = TurnInPlaceState.TurnInPlaceSlotName;
+			TurnInPlaceState.QueuedTurnYawAngle = ViewStateYawAngle;
+
+			CharacterOwner->GetAnimInstance()->PlayQueuedTurnInPlaceAnimation(TurnInPlaceState);
+		}
 		
 		float PlayRate = TurnInPlaceState.TurnInPlaceSettings->PlayRate;
 		if (TurnInPlaceState.TurnInPlaceSettings->bScalePlayRateByAnimatedTurnAngle)
@@ -1664,7 +1680,7 @@ void UAlsCharacterMovementComponent::ApplyTurnInPlace(float DeltaTime)
 		}
 
 		const auto DeltaYawAngle{(TurnInPlaceState.TurnInPlaceSettings->RotationYawSpeedCurve->GetFloatValue(TurnInPlaceState.CurveTime) * DeltaTime) * PlayRate};
-		
+
 		if (FMath::Abs(DeltaYawAngle) > UE_SMALL_NUMBER)
 		{
 			auto NewRotation{GetActorRotation_GMC()};
@@ -1676,11 +1692,6 @@ void UAlsCharacterMovementComponent::ApplyTurnInPlace(float DeltaTime)
 			RefreshTargetYawAngleUsingLocomotionRotation();
 		}
 		
-		if (TurnInPlaceState.CurveTime < UE_SMALL_NUMBER)
-		{
-			CharacterOwner->GetAnimInstance()->PlayQueuedTurnInPlaceAnimation(TurnInPlaceState);
-		}
-
 		TurnInPlaceState.CurveTime += DeltaTime;
 
 	}

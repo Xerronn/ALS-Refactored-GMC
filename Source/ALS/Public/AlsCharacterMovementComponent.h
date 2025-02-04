@@ -491,8 +491,6 @@ public:
 	virtual bool IsTurnInPlaceAllowed();
 
 protected:
-	void InitializeTurnInPlace();
-
 	void ApplyTurnInPlace(float DeltaTime);
 
 protected:
