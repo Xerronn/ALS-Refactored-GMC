@@ -73,5 +73,9 @@ struct ALS_API FAlsLocomotionState
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS", Meta = (ClampMin = 0, ClampMax = 180, ForceUnits = "deg"))
 	float RotationYawOffset{0.0f};
+
+	//Variable to track how long its been since landing, used to adjust friction and prevent actions
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS")
+	float TimeSinceLanding{0.0f};
 	
 };

@@ -2,6 +2,7 @@
 
 #include "AlsAnimationInstance.h"
 #include "AlsCharacter.h"
+#include "MaterialHLSLTree.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Curves/CurveVector.h"
@@ -67,7 +68,7 @@ void UAlsCharacterMovementComponent::BeginPlay()
 	ALS_ENSURE(Settings);
 	ALS_ENSURE(MovementSettings);
 	RefreshGaitSettings();
-	RefreshGroundedMovementSettings();
+	RefreshGroundedMovementSettings(0.0f);
 
 	RotationMode = bDesiredAiming ? AlsRotationModeTags::Aiming : DesiredRotationMode;
 	Stance = DesiredStance;
@@ -309,6 +310,14 @@ void UAlsCharacterMovementComponent::BindReplicationData_Implementation()
 		EGMC_SimulationMode::None,
 		EGMC_InterpolationFunction::Linear
 	);
+
+	BindCompressedSinglePrecisionFloat(
+		LocomotionState.TimeSinceLanding,
+		EGMC_PredictionMode::ServerAuth_Output_ClientValidated,
+		EGMC_CombineMode::AlwaysCombine,
+		EGMC_SimulationMode::None,
+		EGMC_InterpolationFunction::Linear
+	);
 	//end of state
 
 	//start of actions
@@ -375,7 +384,7 @@ void UAlsCharacterMovementComponent::PreMovementUpdate_Implementation(float Delt
 {
 	Super::PreMovementUpdate_Implementation(DeltaSeconds);
 
-	RefreshGroundedMovementSettings();
+	RefreshGroundedMovementSettings(DeltaSeconds);
 
 	if (GetIterationNumber() == 1)
 	{
@@ -470,7 +479,7 @@ void UAlsCharacterMovementComponent::RefreshGaitSettings()
 	GaitSettings = ALS_ENSURE(NewGaitSettings != nullptr) ? *NewGaitSettings : FAlsMovementGaitSettings{};
 }
 
-void UAlsCharacterMovementComponent::RefreshGroundedMovementSettings()
+void UAlsCharacterMovementComponent::RefreshGroundedMovementSettings(float DeltaSeconds)
 {
 	auto WalkSpeed{GaitSettings.WalkForwardSpeed};
 	auto RunSpeed{GaitSettings.RunForwardSpeed};
@@ -551,6 +560,27 @@ void UAlsCharacterMovementComponent::RefreshGroundedMovementSettings()
 		InputAccelerationGrounded = AccelerationAndDecelerationAndGroundFrictionCurves[0].Eval(GaitAmount);
 		BrakingDecelerationGrounded = AccelerationAndDecelerationAndGroundFrictionCurves[1].Eval(GaitAmount);
 		GroundFriction = AccelerationAndDecelerationAndGroundFrictionCurves[2].Eval(GaitAmount);
+		
+		//Modify friction for a short time after landing
+		if (LocomotionState.TimeSinceLanding > 0.0f)
+		{
+			LocomotionState.TimeSinceLanding += DeltaSeconds;
+
+			if (LocomotionState.TimeSinceLanding <= 0.5f)
+			{
+				static constexpr auto HasInputBrakingFrictionFactor{0.5f};
+				static constexpr auto NoInputBrakingFrictionFactor{3.0f};
+			
+				GroundFriction *= LocomotionState.bMoving ? HasInputBrakingFrictionFactor : NoInputBrakingFrictionFactor;
+			}
+
+			//We only need to track 2.5 seconds after landing for turn in place restriction
+			if (LocomotionState.TimeSinceLanding >= 2.5f)
+			{
+				LocomotionState.TimeSinceLanding = 0.f;
+			}
+		}
+
 	}
 }
 
@@ -607,27 +637,11 @@ void UAlsCharacterMovementComponent::OnMovementModeChanged_Implementation(EGMC_M
 		}
 		else
 		{
-			//todo:
-			// // Increase friction for a short period of time to prevent sliding on the ground after landing. Can be done using a bound timer, and increasing friction while its >0
-			//
-			// static constexpr auto HasInputBrakingFrictionFactor{0.5f};
-			// static constexpr auto NoInputBrakingFrictionFactor{3.0f};
-			//
-			// GetCharacterMovement()->BrakingFrictionFactor = LocomotionState.bHasInput
-			// 	                                                ? HasInputBrakingFrictionFactor
-			// 	                                                : NoInputBrakingFrictionFactor;
-			//
-			// static constexpr auto ResetDelay{0.5f};
-			//
-			// GetWorldTimerManager().SetTimer(BrakingFrictionFactorResetTimer,
-			//                                 FTimerDelegate::CreateWeakLambda(this, [this]
-			//                                 {
-			// 	                                GetCharacterMovement()->BrakingFrictionFactor = 0.0f;
-			//                                 }), ResetDelay, false);
-
+			//Start tracking time since landing
+			LocomotionState.TimeSinceLanding = 0.01f;
+			
 			// Block rotation towards the last input direction after landing to prevent
 			// legs from twisting into a spiral while the landing animation is playing.
-
 			LocomotionState.bRotationTowardsLastInputDirectionBlocked = true;
 		}
 	}
@@ -1572,9 +1586,10 @@ void UAlsCharacterMovementComponent::ApplyRotateInPlace(const float DeltaTime)
 bool UAlsCharacterMovementComponent::IsTurnInPlaceAllowed()
 {
 	return RotationMode == AlsRotationModeTags::ViewDirection && ViewMode != AlsViewModeTags::FirstPerson &&
-		!LocomotionState.bMoving && IsMovingOnGround();
+		!LocomotionState.bMoving && IsMovingOnGround() && LocomotionState.TimeSinceLanding == 0.0f;
 }
 
+//todo: fix bug when landing and immediately turning in place
 void UAlsCharacterMovementComponent::ApplyTurnInPlace(float DeltaTime)
 {
 	TurnInPlaceState.BlendDuration = Settings->TurnInPlace.BlendDuration;

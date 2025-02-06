@@ -155,9 +155,7 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State|Als Character", Transient)
 	FAlsRollingState RollingState;
-
-	FTimerHandle BrakingFrictionFactorResetTimer;
-
+	
 	//start of input handling
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
 	TObjectPtr<UInputAction> SprintAction{nullptr};
@@ -273,7 +271,7 @@ public:
 	const FGameplayTag& GetMaxAllowedGait() const;
 
 private:
-	void RefreshGroundedMovementSettings();
+	void RefreshGroundedMovementSettings(float DeltaSeconds);
 
 public:
 	void SetMovementModeLocked(bool bNewMovementModeLocked);
