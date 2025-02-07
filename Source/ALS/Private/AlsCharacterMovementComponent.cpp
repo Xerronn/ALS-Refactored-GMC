@@ -91,6 +91,8 @@ void UAlsCharacterMovementComponent::BeginPlay()
 	const FVector Extent = GetRootCollisionExtent(true);
 	StandingHalfHeight = Extent.Z;
 	DefaultRadius = Extent.X;
+
+	RotateInPlaceState.PlayRate = Settings->RotateInPlace.PlayRate.X;
 }
 
 void UAlsCharacterMovementComponent::BindReplicationData_Implementation()
@@ -286,6 +288,14 @@ void UAlsCharacterMovementComponent::BindReplicationData_Implementation()
 		EGMC_SimulationMode::None,
 		EGMC_InterpolationFunction::Linear
 	);
+	
+	BindCompressedSinglePrecisionFloat(
+		RotateInPlaceState.PlayRate,
+		EGMC_PredictionMode::ServerAuth_Output_ClientValidated,
+		EGMC_CombineMode::AlwaysCombine,
+		EGMC_SimulationMode::None,
+		EGMC_InterpolationFunction::Linear
+	);
 
 	BindCompressedSinglePrecisionFloat(
 		TurnInPlaceState.CurveTime,
@@ -304,13 +314,13 @@ void UAlsCharacterMovementComponent::BindReplicationData_Implementation()
 	);
 
 	BindCompressedSinglePrecisionFloat(
-		RotateInPlaceState.PlayRate,
+		TurnInPlaceState.PlayRate,
 		EGMC_PredictionMode::ServerAuth_Output_ClientValidated,
 		EGMC_CombineMode::AlwaysCombine,
 		EGMC_SimulationMode::None,
 		EGMC_InterpolationFunction::Linear
 	);
-
+	
 	BindCompressedSinglePrecisionFloat(
 		LocomotionState.TimeSinceLanding,
 		EGMC_PredictionMode::ServerAuth_Output_ClientValidated,
@@ -1496,35 +1506,36 @@ bool UAlsCharacterMovementComponent::IsRotateInPlaceAllowed() const
 
 void UAlsCharacterMovementComponent::ApplyRotateInPlace(const float DeltaTime)
 {
-	//todo: make sure that it only ever performs 90 degree rotations and not less
 	if (!IsValid(Settings))
 	{
 		return;
 	}
-	
-	if (LocomotionState.bMoving || !IsRotateInPlaceAllowed())
+
+	//todo: come up with a way to not hard code the 1.0 curve length
+	if (LocomotionState.bMoving || !IsRotateInPlaceAllowed() || RotateInPlaceState.CurveTime >= 1.0f / RotateInPlaceState.PlayRate)
 	{
 		RotateInPlaceState.bRotatingLeft = false;
 		RotateInPlaceState.bRotatingRight = false;
 		RotateInPlaceState.CurveTime = 0.0f;
+		return;
 	}
-	else
+
+	static constexpr auto PlayRateInterpolationSpeed{5.0f}; 
+	if (RotateInPlaceState.CurveTime < UE_SMALL_NUMBER)
 	{
 		// Check if the character should rotate left or right by checking if the view yaw angle exceeds the threshold.
 		float ViewStateYawAngle = FMath::UnwindDegrees(UE_REAL_TO_FLOAT(ViewState.Rotation.Yaw - LocomotionState.Rotation.Yaw));
 
 		RotateInPlaceState.bRotatingLeft = ViewStateYawAngle < -Settings->RotateInPlace.ViewYawAngleThreshold;
 		RotateInPlaceState.bRotatingRight = ViewStateYawAngle > Settings->RotateInPlace.ViewYawAngleThreshold;
-	}
 
-	static constexpr auto PlayRateInterpolationSpeed{5.0f};
-
-	if (!RotateInPlaceState.bRotatingLeft && !RotateInPlaceState.bRotatingRight)
-	{
-		RotateInPlaceState.PlayRate = FMath::FInterpTo(RotateInPlaceState.PlayRate, Settings->RotateInPlace.PlayRate.X,
-															 DeltaTime, PlayRateInterpolationSpeed);
-		RotateInPlaceState.CurveTime = 0.0f;
-		return;
+		if (!RotateInPlaceState.bRotatingLeft && !RotateInPlaceState.bRotatingRight)
+		{
+			RotateInPlaceState.PlayRate = FMath::FInterpTo(RotateInPlaceState.PlayRate, Settings->RotateInPlace.PlayRate.X,
+																 DeltaTime, PlayRateInterpolationSpeed);
+			RotateInPlaceState.CurveTime = 0.0f;
+			return;
+		}
 	}
 
 	// If the character should rotate, set the play rate to scale with the view yaw
@@ -1538,12 +1549,6 @@ void UAlsCharacterMovementComponent::ApplyRotateInPlace(const float DeltaTime)
 	RotateInPlaceState.PlayRate = FMath::FInterpTo(RotateInPlaceState.PlayRate, PlayRate,
 														 DeltaTime, PlayRateInterpolationSpeed);
 	
-	RotateInPlaceState.CurveTime += DeltaTime * PlayRate;
-	//todo: come up with a way to not hard code the 1.0 curve length
-	if (RotateInPlaceState.CurveTime > 1.0f)
-	{
-		RotateInPlaceState.CurveTime -= 1.0f;
-	}
 	TObjectPtr<UCurveFloat> RotateInPlaceCurve{nullptr};
 	
 	if (Stance == AlsStanceTags::Standing)
@@ -1569,7 +1574,7 @@ void UAlsCharacterMovementComponent::ApplyRotateInPlace(const float DeltaTime)
 		}
 	}
 	
-	const auto DeltaYawAngle{(RotateInPlaceCurve->GetFloatValue(RotateInPlaceState.CurveTime) * DeltaTime) * RotateInPlaceState.PlayRate};
+	const auto DeltaYawAngle{RotateInPlaceCurve->GetFloatValue(RotateInPlaceState.CurveTime) * DeltaTime * RotateInPlaceState.PlayRate};
 
 	if (FMath::Abs(DeltaYawAngle) > UE_SMALL_NUMBER)
 	{
@@ -1581,6 +1586,8 @@ void UAlsCharacterMovementComponent::ApplyRotateInPlace(const float DeltaTime)
 		RefreshLocomotionLocationAndRotation();
 		RefreshTargetYawAngleUsingLocomotionRotation();
 	}
+
+	RotateInPlaceState.CurveTime += DeltaTime * RotateInPlaceState.PlayRate;
 }
 
 bool UAlsCharacterMovementComponent::IsTurnInPlaceAllowed()
@@ -1589,7 +1596,6 @@ bool UAlsCharacterMovementComponent::IsTurnInPlaceAllowed()
 		!LocomotionState.bMoving && IsMovingOnGround() && LocomotionState.TimeSinceLanding == 0.0f;
 }
 
-//todo: fix bug when landing and immediately turning in place
 void UAlsCharacterMovementComponent::ApplyTurnInPlace(float DeltaTime)
 {
 	TurnInPlaceState.BlendDuration = Settings->TurnInPlace.BlendDuration;
@@ -1599,8 +1605,8 @@ void UAlsCharacterMovementComponent::ApplyTurnInPlace(float DeltaTime)
 		return;
 	}
 
-	//todo: come up with a way to not hard code the 2.0 and 1.2
-	if (!IsTurnInPlaceAllowed() || TurnInPlaceState.CurveTime > 2.0f / 1.2f)
+	//todo: come up with a way to not hard code the 2.0
+	if (!IsTurnInPlaceAllowed() || TurnInPlaceState.CurveTime > 2.0f / TurnInPlaceState.PlayRate)
 	{
 		TurnInPlaceState.ActivationDelay = 0.0f;
 		TurnInPlaceState.CurveTime = 0.0f;
@@ -1688,13 +1694,13 @@ void UAlsCharacterMovementComponent::ApplyTurnInPlace(float DeltaTime)
 			CharacterOwner->GetAnimInstance()->PlayQueuedTurnInPlaceAnimation(TurnInPlaceState);
 		}
 		
-		float PlayRate = TurnInPlaceState.TurnInPlaceSettings->PlayRate;
+		TurnInPlaceState.PlayRate = TurnInPlaceState.TurnInPlaceSettings->PlayRate;
 		if (TurnInPlaceState.TurnInPlaceSettings->bScalePlayRateByAnimatedTurnAngle)
 		{
-			PlayRate *= FMath::Abs(TurnInPlaceState.QueuedTurnYawAngle / TurnInPlaceState.TurnInPlaceSettings->AnimatedTurnAngle);
+			TurnInPlaceState.PlayRate *= FMath::Abs(TurnInPlaceState.QueuedTurnYawAngle / TurnInPlaceState.TurnInPlaceSettings->AnimatedTurnAngle);
 		}
-
-		const auto DeltaYawAngle{(TurnInPlaceState.TurnInPlaceSettings->RotationYawSpeedCurve->GetFloatValue(TurnInPlaceState.CurveTime) * DeltaTime) * PlayRate};
+		
+		const auto DeltaYawAngle{TurnInPlaceState.TurnInPlaceSettings->RotationYawSpeedCurve->GetFloatValue(TurnInPlaceState.CurveTime) * DeltaTime * TurnInPlaceState.PlayRate};
 
 		if (FMath::Abs(DeltaYawAngle) > UE_SMALL_NUMBER)
 		{
@@ -1707,7 +1713,7 @@ void UAlsCharacterMovementComponent::ApplyTurnInPlace(float DeltaTime)
 			RefreshTargetYawAngleUsingLocomotionRotation();
 		}
 		
-		TurnInPlaceState.CurveTime += DeltaTime;
+		TurnInPlaceState.CurveTime += DeltaTime * TurnInPlaceState.PlayRate;
 
 	}
 }
