@@ -19,23 +19,16 @@ void UAlsCharacterMovementComponent::SetupPlayerInputComponent_Implementation(UI
 		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Triggered, this, &UAlsCharacterMovementComponent::StartSprintAction);
 		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Completed, this, &UAlsCharacterMovementComponent::StopSprintAction);
 		EnhancedInputComponent->BindAction(WalkAction, ETriggerEvent::Triggered, this, &UAlsCharacterMovementComponent::StartWalkAction);
-		EnhancedInputComponent->BindAction(WalkAction, ETriggerEvent::Completed, this, &UAlsCharacterMovementComponent::StopWalkAction);
 		EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Triggered, this, &UAlsCharacterMovementComponent::StartCrouchAction);
-		EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Completed, this, &UAlsCharacterMovementComponent::StopCrouchAction);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &UAlsCharacterMovementComponent::StartJumpAction);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &UAlsCharacterMovementComponent::StopJumpAction);
 		
 		EnhancedInputComponent->BindAction(RotationModeAction, ETriggerEvent::Triggered, this, &UAlsCharacterMovementComponent::StartRotationModeAction);
-		EnhancedInputComponent->BindAction(RotationModeAction, ETriggerEvent::Completed, this, &UAlsCharacterMovementComponent::StopRotationModeAction);
 		EnhancedInputComponent->BindAction(ViewModeAction, ETriggerEvent::Triggered, this, &UAlsCharacterMovementComponent::StartViewModeAction);
-		EnhancedInputComponent->BindAction(ViewModeAction, ETriggerEvent::Completed, this, &UAlsCharacterMovementComponent::StopViewModeAction);
 		EnhancedInputComponent->BindAction(SwitchShoulderAction, ETriggerEvent::Triggered, this, &UAlsCharacterMovementComponent::StartSwitchShoulderAction);
-		EnhancedInputComponent->BindAction(SwitchShoulderAction, ETriggerEvent::Completed, this, &UAlsCharacterMovementComponent::StopSwitchShoulderAction);
 		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Triggered, this, &UAlsCharacterMovementComponent::StartAimAction);
 		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Completed, this, &UAlsCharacterMovementComponent::StopAimAction);
 		EnhancedInputComponent->BindAction(RagdollAction, ETriggerEvent::Triggered, this, &UAlsCharacterMovementComponent::StartRagdollAction);
-		EnhancedInputComponent->BindAction(RagdollAction, ETriggerEvent::Completed, this, &UAlsCharacterMovementComponent::StopRagdollAction);
-
 	}
 }
 
@@ -51,22 +44,16 @@ void UAlsCharacterMovementComponent::StopSprintAction(const FInputActionInstance
 
 void UAlsCharacterMovementComponent::StartWalkAction(const FInputActionInstance& InputAction)
 {
-	SetDesiredGait(AlsGaitTags::Walking);
-}
-
-void UAlsCharacterMovementComponent::StopWalkAction(const FInputActionInstance& InputAction)
-{
-	SetDesiredGait(AlsGaitTags::Running);
+	SetDesiredGait(GetDesiredGait() == AlsGaitTags::Walking
+							   ? AlsGaitTags::Running
+							   : AlsGaitTags::Walking);
 }
 
 void UAlsCharacterMovementComponent::StartCrouchAction(const FInputActionInstance& InputAction)
 {
-	SetDesiredStance(AlsStanceTags::Crouching);
-}
-
-void UAlsCharacterMovementComponent::StopCrouchAction(const FInputActionInstance& InputAction)
-{
-	return;
+	SetDesiredStance(GetDesiredStance() == AlsStanceTags::Crouching
+							   ? AlsStanceTags::Standing
+							   : AlsStanceTags::Crouching);
 }
 	
 void UAlsCharacterMovementComponent::StartJumpAction(const FInputActionInstance& InputAction)
@@ -90,30 +77,15 @@ void UAlsCharacterMovementComponent::StartRotationModeAction(const FInputActionI
 							   ? AlsRotationModeTags::ViewDirection
 							   : AlsRotationModeTags::VelocityDirection);
 }
-	
-void UAlsCharacterMovementComponent::StopRotationModeAction(const FInputActionInstance& InputAction)
-{
-	return;
-}
 
 void UAlsCharacterMovementComponent::StartViewModeAction(const FInputActionInstance& InputAction)
 {
 	SetViewMode(GetViewMode() == AlsViewModeTags::ThirdPerson ? AlsViewModeTags::FirstPerson : AlsViewModeTags::ThirdPerson);
 }
-	
-void UAlsCharacterMovementComponent::StopViewModeAction(const FInputActionInstance& InputAction)
-{
-	return;
-}
 
 void UAlsCharacterMovementComponent::StartSwitchShoulderAction(const FInputActionInstance& InputAction)
 {
-	// CharacterOwner->GetCamera()->SetRightShoulder(!CharacterOwner->GetCamera()->IsRightShoulder());
-}
-	
-void UAlsCharacterMovementComponent::StopSwitchShoulderAction(const FInputActionInstance& InputAction)
-{
-	return;
+	CharacterOwner->GetCamera()->SetRightShoulder(!CharacterOwner->GetCamera()->IsRightShoulder());
 }
 
 void UAlsCharacterMovementComponent::StartAimAction(const FInputActionInstance& InputAction)
@@ -129,9 +101,4 @@ void UAlsCharacterMovementComponent::StopAimAction(const FInputActionInstance& I
 void UAlsCharacterMovementComponent::StartRagdollAction(const FInputActionInstance& InputAction)
 {
 	bDesiredRagdolling = !bDesiredRagdolling;
-}
-	
-void UAlsCharacterMovementComponent::StopRagdollAction(const FInputActionInstance& InputAction)
-{
-	return;
 }

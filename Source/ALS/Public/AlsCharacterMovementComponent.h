@@ -228,28 +228,22 @@ protected:
 	virtual void StopSprintAction(const FInputActionInstance& InputAction);
 
 	virtual void StartWalkAction(const FInputActionInstance& InputAction);
-	virtual void StopWalkAction(const FInputActionInstance& InputAction);
 
 	virtual void StartCrouchAction(const FInputActionInstance& InputAction);
-	virtual void StopCrouchAction(const FInputActionInstance& InputAction);
 
 	virtual void StartJumpAction(const FInputActionInstance& InputAction);
 	virtual void StopJumpAction(const FInputActionInstance& InputAction);
 
 	virtual void StartRotationModeAction(const FInputActionInstance& InputAction);
-	virtual void StopRotationModeAction(const FInputActionInstance& InputAction);
 
 	virtual void StartViewModeAction(const FInputActionInstance& InputAction);
-	virtual void StopViewModeAction(const FInputActionInstance& InputAction);
 
 	virtual void StartSwitchShoulderAction(const FInputActionInstance& InputAction);
-	virtual void StopSwitchShoulderAction(const FInputActionInstance& InputAction);
 
 	virtual void StartAimAction(const FInputActionInstance& InputAction);
 	virtual void StopAimAction(const FInputActionInstance& InputAction);
 
 	virtual void StartRagdollAction(const FInputActionInstance& InputAction);
-	virtual void StopRagdollAction(const FInputActionInstance& InputAction);
 	//end of input actions
 
 public:
