@@ -83,12 +83,6 @@ protected:
 
 	UFUNCTION(BlueprintCallable, Category = "ALS|Linked Animation Instance", Meta = (BlueprintThreadSafe))
 	void RefreshDynamicTransitions();
-
-	UFUNCTION(BlueprintCallable, Category = "ALS|Linked Animation Instance", Meta = (BlueprintThreadSafe))
-	void InitializeTurnInPlace();
-
-	UFUNCTION(BlueprintCallable, Category = "ALS|Linked Animation Instance", Meta = (BlueprintThreadSafe))
-	void RefreshTurnInPlace();
 };
 
 inline UAlsAnimationInstance* UAlsLinkedAnimationInstance::GetParentUnsafe() const

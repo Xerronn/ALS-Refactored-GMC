@@ -165,19 +165,3 @@ void UAlsLinkedAnimationInstance::RefreshDynamicTransitions()
 		Parent->RefreshDynamicTransitions();
 	}
 }
-
-void UAlsLinkedAnimationInstance::InitializeTurnInPlace()
-{
-	if (Parent.IsValid())
-	{
-		// Parent->InitializeTurnInPlace();
-	}
-}
-
-void UAlsLinkedAnimationInstance::RefreshTurnInPlace()
-{
-	if (Parent.IsValid())
-	{
-		// Parent->RefreshTurnInPlace();
-	}
-}
