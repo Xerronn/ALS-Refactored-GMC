@@ -503,13 +503,6 @@ void UAlsAnimationInstance::RefreshLook()
 		{
 			DeltaYawAngle -= 360.0f;
 		}
-		else if (FMath::Abs(LocomotionState.YawSpeed) > 5.0f && FMath::Abs(TargetYawAngle) > 90.0f)
-		{
-			// When interpolating yaw angle, favor the character rotation direction, over the shortest rotation
-			// direction, so that the rotation of the head remains synchronized with the rotation of the body.
-
-			DeltaYawAngle = LocomotionState.YawSpeed > 0.0f ? FMath::Abs(DeltaYawAngle) : -FMath::Abs(DeltaYawAngle);
-		}
 
 		const auto InterpolationAmount{UAlsMath::ExponentialDecay(GetDeltaSeconds(), InterpolationSpeed)};
 
@@ -578,12 +571,6 @@ void UAlsAnimationInstance::RefreshLocomotionOnGameThread()
 	LocomotionState.Location = ActorTransform.GetLocation();
 	LocomotionState.Rotation = ActorTransform.Rotator();
 	LocomotionState.RotationQuaternion = ActorTransform.GetRotation();
-	
-	
-	LocomotionState.YawSpeed = bCanCalculateRateOfChange
-		                           ? FMath::UnwindDegrees(UE_REAL_TO_FLOAT(
-			                             LocomotionState.Rotation.Yaw - PreviousYawAngle)) / ActorDeltaTime
-		                           : 0.0f;
 	
 	LocomotionState.Scale = UE_REAL_TO_FLOAT(Proxy.GetComponentTransform().GetScale3D().Z);
 
@@ -1506,7 +1493,6 @@ void UAlsAnimationInstance::PlayQueuedTurnInPlaceAnimation(FAlsTurnInPlaceState&
 	check(IsInGameThread())
 
 	TurnInPlaceState.ActivationDelay = CharacterTurnInPlaceState.ActivationDelay;
-	TurnInPlaceState.BlendDuration = CharacterTurnInPlaceState.BlendDuration;
 	TurnInPlaceState.PlayRate = CharacterTurnInPlaceState.PlayRate;
 	TurnInPlaceState.QueuedSettings = CharacterTurnInPlaceState.QueuedSettings;
 	TurnInPlaceState.QueuedSlotName = CharacterTurnInPlaceState.QueuedSlotName;
@@ -1519,9 +1505,9 @@ void UAlsAnimationInstance::PlayQueuedTurnInPlaceAnimation(FAlsTurnInPlaceState&
 
 	const auto* TurnInPlaceSettings{TurnInPlaceState.QueuedSettings.Get()};
 
-	PlaySlotAnimationAsDynamicMontage(TurnInPlaceSettings->Sequence, TurnInPlaceState.QueuedSlotName,
-	                                  TurnInPlaceState.BlendDuration, TurnInPlaceState.BlendDuration,
-	                                  TurnInPlaceSettings->PlayRate, 1, 0.0f);
+	// PlaySlotAnimationAsDynamicMontage(TurnInPlaceSettings->Sequence, TurnInPlaceState.QueuedSlotName,
+	//                                   TurnInPlaceState.BlendDuration, TurnInPlaceState.BlendDuration,
+	//                                   TurnInPlaceSettings->PlayRate, 1, 0.0f);
 
 	// Scale the rotation yaw delta (gets scaled in animation graph) to compensate for play rate and turn angle (if allowed).
 
