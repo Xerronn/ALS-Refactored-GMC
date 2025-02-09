@@ -503,7 +503,7 @@ void UAlsAnimationInstance::RefreshLook()
 		{
 			DeltaYawAngle -= 360.0f;
 		}
-		else if (FMath::Abs(LocomotionState.YawSpeed) > UE_SMALL_NUMBER && FMath::Abs(TargetYawAngle) > 90.0f)
+		else if (FMath::Abs(LocomotionState.YawSpeed) > 5.0f && FMath::Abs(TargetYawAngle) > 90.0f)
 		{
 			// When interpolating yaw angle, favor the character rotation direction, over the shortest rotation
 			// direction, so that the rotation of the head remains synchronized with the rotation of the body.
@@ -557,12 +557,12 @@ void UAlsAnimationInstance::RefreshLocomotionOnGameThread()
 	LocomotionState.MaxAcceleration = Movement->GetInputAcceleration();
 	LocomotionState.MaxBrakingDeceleration = Movement->GetBrakingDeceleration();
 	LocomotionState.WalkableFloorAngleCos = FMath::Cos(FMath::DegreesToRadians(Movement->WalkableFloorAngle));
-
+	
 	LocomotionState.bMoving = Locomotion.bMoving;
-
+	
 	LocomotionState.bMovingSmooth = (Locomotion.bHasInput && Locomotion.bHasVelocity) ||
 	                                Locomotion.Speed > Settings->General.MovingSmoothSpeedThreshold;
-
+	
 	LocomotionState.TargetYawAngle = Locomotion.TargetYawAngle;
 
 	const auto PreviousYawAngle{LocomotionState.Rotation.Yaw};
@@ -578,13 +578,13 @@ void UAlsAnimationInstance::RefreshLocomotionOnGameThread()
 	LocomotionState.Location = ActorTransform.GetLocation();
 	LocomotionState.Rotation = ActorTransform.Rotator();
 	LocomotionState.RotationQuaternion = ActorTransform.GetRotation();
-
-
+	
+	
 	LocomotionState.YawSpeed = bCanCalculateRateOfChange
 		                           ? FMath::UnwindDegrees(UE_REAL_TO_FLOAT(
 			                             LocomotionState.Rotation.Yaw - PreviousYawAngle)) / ActorDeltaTime
 		                           : 0.0f;
-
+	
 	LocomotionState.Scale = UE_REAL_TO_FLOAT(Proxy.GetComponentTransform().GetScale3D().Z);
 
 	const TObjectPtr Capsule{Character->GetCapsuleComponent()};

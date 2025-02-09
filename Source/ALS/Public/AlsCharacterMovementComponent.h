@@ -215,7 +215,6 @@ protected:
 	
 	void MovementUpdateSimulated_Implementation(float DeltaSeconds) override;
 	
-	FVector TransformInputVectorAbsoluteZ(const FVector& AbsoluteInputVector) const override;
 private:
 	EGMC_CollisionShape InterpToSphereAndSwitchCollisionShape(EGMC_CollisionShape CurrentShape, float SphereRadius, float DeltaSeconds);
 	void MaintainMeshOffset();

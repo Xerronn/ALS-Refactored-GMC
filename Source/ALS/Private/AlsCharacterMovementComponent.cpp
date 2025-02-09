@@ -1029,20 +1029,6 @@ FVector UAlsCharacterMovementComponent::PreProcessInputVector_Implementation(FVe
 	return Super::PreProcessInputVector_Implementation(InRawInputVector);
 }
 
-//basically overridden to use ViewState.Rotation instead of the ControlRotation, so I have control over when
-FVector UAlsCharacterMovementComponent::TransformInputVectorAbsoluteZ(const FVector& AbsoluteInputVector) const
-{
-	if (!IsValid(PawnOwner) || AbsoluteInputVector.IsZero())
-	{
-		return FVector{0.};
-	}
-
-	FRotator ControlRotation = ViewState.Rotation;
-	ControlRotation.Pitch = 0.;
-	const FVector InputVectorAbsoluteZ = ControlRotation.RotateVector(AbsoluteInputVector);
-	return {InputVectorAbsoluteZ.X, InputVectorAbsoluteZ.Y, AbsoluteInputVector.Z};
-}
-
 void UAlsCharacterMovementComponent::RefreshInput(const float DeltaTime)
 {
 	if (IsSimulatedProxy())
