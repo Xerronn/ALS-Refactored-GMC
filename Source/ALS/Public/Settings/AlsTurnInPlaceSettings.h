@@ -11,7 +11,7 @@ class ALS_API UAlsTurnInPlaceSettings : public UObject
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings")
-	TObjectPtr<UAnimSequenceBase> Sequence;
+	TObjectPtr<UAnimMontage> Montage;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings", Meta = (ClampMin = 0, ForceUnits = "x"))
 	float PlayRate{1.2f};
@@ -21,9 +21,6 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings", Meta = (ClampMin = 0.0001, ClampMax = 180, ForceUnits = "deg"))
 	float AnimatedTurnAngle{0.0f};
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings")
-	TObjectPtr<UCurveFloat> RotationYawSpeedCurve;
 };
 
 USTRUCT(BlueprintType)

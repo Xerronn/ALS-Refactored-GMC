@@ -183,7 +183,6 @@ void UAlsAnimationInstance::NativePostUpdateAnimation()
 	}
 
 	PlayQueuedTransitionAnimation();
-	PlayQueuedTurnInPlaceAnimation(TurnInPlaceState);
 	StopQueuedTransitionAndTurnInPlaceAnimations();
 
 #if WITH_EDITORONLY_DATA && ENABLE_DRAW_DEBUG
@@ -557,8 +556,6 @@ void UAlsAnimationInstance::RefreshLocomotionOnGameThread()
 	                                Locomotion.Speed > Settings->General.MovingSmoothSpeedThreshold;
 	
 	LocomotionState.TargetYawAngle = Locomotion.TargetYawAngle;
-
-	const auto PreviousYawAngle{LocomotionState.Rotation.Yaw};
 
 	const auto& Proxy{GetProxyOnGameThread<FAnimInstanceProxy>()};
 	const auto& ActorTransform{Proxy.GetActorTransform()};
@@ -1486,41 +1483,6 @@ void UAlsAnimationInstance::RefreshRotateInPlaceOnGameThread()
 	RotateInPlaceState.bRotatingLeft = RotateInPlace.bRotatingLeft;
 	RotateInPlaceState.bRotatingRight = RotateInPlace.bRotatingRight;
 	RotateInPlaceState.PlayRate = RotateInPlace.PlayRate;
-}
-
-void UAlsAnimationInstance::PlayQueuedTurnInPlaceAnimation(FAlsTurnInPlaceState& CharacterTurnInPlaceState)
-{
-	check(IsInGameThread())
-
-	TurnInPlaceState.ActivationDelay = CharacterTurnInPlaceState.ActivationDelay;
-	TurnInPlaceState.PlayRate = CharacterTurnInPlaceState.PlayRate;
-	TurnInPlaceState.QueuedSettings = CharacterTurnInPlaceState.QueuedSettings;
-	TurnInPlaceState.QueuedSlotName = CharacterTurnInPlaceState.QueuedSlotName;
-	TurnInPlaceState.QueuedTurnYawAngle = CharacterTurnInPlaceState.QueuedTurnYawAngle;
-
-	if (TransitionsState.bStopTransitionsQueued || !IsValid(TurnInPlaceState.QueuedSettings))
-	{
-		return;
-	}
-
-	const auto* TurnInPlaceSettings{TurnInPlaceState.QueuedSettings.Get()};
-
-	// PlaySlotAnimationAsDynamicMontage(TurnInPlaceSettings->Sequence, TurnInPlaceState.QueuedSlotName,
-	//                                   TurnInPlaceState.BlendDuration, TurnInPlaceState.BlendDuration,
-	//                                   TurnInPlaceSettings->PlayRate, 1, 0.0f);
-
-	// Scale the rotation yaw delta (gets scaled in animation graph) to compensate for play rate and turn angle (if allowed).
-
-	TurnInPlaceState.PlayRate = TurnInPlaceSettings->PlayRate;
-
-	if (TurnInPlaceSettings->bScalePlayRateByAnimatedTurnAngle)
-	{
-		TurnInPlaceState.PlayRate *= FMath::Abs(TurnInPlaceState.QueuedTurnYawAngle / TurnInPlaceSettings->AnimatedTurnAngle);
-	}
-
-	TurnInPlaceState.QueuedSettings = nullptr;
-	TurnInPlaceState.QueuedSlotName = NAME_None;
-	TurnInPlaceState.QueuedTurnYawAngle = 0.0f;
 }
 
 void UAlsAnimationInstance::RefreshRagdollingOnGameThread()

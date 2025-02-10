@@ -298,14 +298,6 @@ void UAlsCharacterMovementComponent::BindReplicationData_Implementation()
 	);
 
 	BindCompressedSinglePrecisionFloat(
-		TurnInPlaceState.CurveTime,
-		EGMC_PredictionMode::ServerAuth_Output_ClientValidated,
-		EGMC_CombineMode::AlwaysCombine,
-		EGMC_SimulationMode::None,
-		EGMC_InterpolationFunction::Linear
-	);
-
-	BindCompressedSinglePrecisionFloat(
 		TurnInPlaceState.ActivationDelay,
 		EGMC_PredictionMode::ServerAuth_Output_ClientValidated,
 		EGMC_CombineMode::AlwaysCombine,
@@ -465,6 +457,18 @@ void UAlsCharacterMovementComponent::MovementUpdateSimulated_Implementation(floa
 	RefreshLocomotionLate();
 
 	ApplyDesiredOverlayMode(DesiredOverlayMode);
+}
+
+void UAlsCharacterMovementComponent::ApplyAnimRootMotionRotation(const FGMC_RootMotionExtractionSettings& ExtractionSettings, float MontageDelta, float DeltaSeconds)
+{
+	//allow for use scaling of root motion rotation
+	FTransform RootMotionTransform = RootMotionParams.GetRootMotionTransform();
+	
+	FRotator NewRotation = FRotator(0., RootMotionTransform.Rotator().Yaw * AnimRootMotionRotationScale, 0.);
+	RootMotionTransform.SetRotation(NewRotation.Quaternion());
+	RootMotionParams.Set(RootMotionTransform);
+	
+	Super::ApplyAnimRootMotionRotation(ExtractionSettings, MontageDelta, DeltaSeconds);
 }
 
 void UAlsCharacterMovementComponent::SetMovementSettings(UAlsMovementSettings* NewMovementSettings)
@@ -1227,11 +1231,12 @@ void UAlsCharacterMovementComponent::RefreshGroundedRotation(const float DeltaTi
 		return;
 	}
 
-	if (bHasRootMotion)
-	{
-		RefreshTargetYawAngleUsingLocomotionRotation();
-		return;
-	}
+	//todo: make this work only when rolling/mantling. ignore the root motion when turning in place basically
+	// if (bHasRootMotion)
+	// {
+	// 	RefreshTargetYawAngleUsingLocomotionRotation();
+	// 	return;
+	// }
 
 	ApplyRotateInPlace(DeltaTime);
 	ApplyTurnInPlace(DeltaTime);
@@ -1579,23 +1584,21 @@ void UAlsCharacterMovementComponent::ApplyRotateInPlace(const float DeltaTime)
 bool UAlsCharacterMovementComponent::IsTurnInPlaceAllowed()
 {
 	return RotationMode == AlsRotationModeTags::ViewDirection && ViewMode != AlsViewModeTags::FirstPerson &&
-		!LocomotionState.bMoving && IsMovingOnGround() && LocomotionState.TimeSinceLanding == 0.0f;
+		!LocomotionState.bMoving && IsMovingOnGround() && LocomotionState.TimeSinceLanding == 0.0f && !LocomotionState.bHasInput;
 }
 
 void UAlsCharacterMovementComponent::ApplyTurnInPlace(float DeltaTime)
 {
-	TurnInPlaceState.BlendDuration = Settings->TurnInPlace.BlendDuration;
-	
 	if (!IsValid(Settings))
 	{
 		return;
 	}
 
-	//todo: come up with a way to not hard code the 2.0
-	if (!IsTurnInPlaceAllowed() || TurnInPlaceState.CurveTime > 2.0f / TurnInPlaceState.PlayRate)
+	if (!IsTurnInPlaceAllowed())
 	{
+		AnimRootMotionRotationScale = 1.0f;
 		TurnInPlaceState.ActivationDelay = 0.0f;
-		TurnInPlaceState.CurveTime = 0.0f;
+		StopMontage(CharacterOwner->GetMesh(), MontageTracker, Settings->TurnInPlace.BlendDuration, true);
 		return;
 	}
 	
@@ -1603,13 +1606,12 @@ void UAlsCharacterMovementComponent::ApplyTurnInPlace(float DeltaTime)
 	// threshold. If so, begin counting the activation delay time. If not, reset the activation delay
 	// time. This ensures the conditions remain true for a sustained time before turning in place.
 	float ViewStateYawAngle = FMath::UnwindDegrees(UE_REAL_TO_FLOAT(ViewState.Rotation.Yaw - LocomotionState.Rotation.Yaw));
-	if (TurnInPlaceState.CurveTime < UE_SMALL_NUMBER)
+	if (!HasActiveMontage(MontageTracker))
 	{
 		if (ViewState.YawSpeed >= Settings->TurnInPlace.ViewYawSpeedThreshold ||
 		    FMath::Abs(ViewStateYawAngle) <= Settings->TurnInPlace.ViewYawAngleThreshold)
 		{
 			TurnInPlaceState.ActivationDelay = 0.0f;
-			TurnInPlaceState.CurveTime = 0.0f;
 			return;
 		}
 		
@@ -1634,8 +1636,6 @@ void UAlsCharacterMovementComponent::ApplyTurnInPlace(float DeltaTime)
 		
 		if (Stance == AlsStanceTags::Standing)
 		{
-			TurnInPlaceState.TurnInPlaceSlotName = UAlsConstants::TurnInPlaceStandingSlotName();
-		
 			if (FMath::Abs(ViewStateYawAngle) < Settings->TurnInPlace.Turn180AngleThreshold)
 			{
 				TurnInPlaceState.TurnInPlaceSettings = bTurnLeft
@@ -1651,8 +1651,6 @@ void UAlsCharacterMovementComponent::ApplyTurnInPlace(float DeltaTime)
 		}
 		else if (Stance == AlsStanceTags::Crouching)
 		{
-			TurnInPlaceState.TurnInPlaceSlotName = UAlsConstants::TurnInPlaceCrouchingSlotName();
-		
 			if (FMath::Abs(ViewStateYawAngle) < Settings->TurnInPlace.Turn180AngleThreshold)
 			{
 				TurnInPlaceState.TurnInPlaceSettings = bTurnLeft
@@ -1666,41 +1664,27 @@ void UAlsCharacterMovementComponent::ApplyTurnInPlace(float DeltaTime)
 										  : Settings->TurnInPlace.CrouchingTurn180Right;
 			}
 		}
+		// lock in the QueuedTurnYawAngle
+		TurnInPlaceState.QueuedTurnYawAngle = ViewStateYawAngle;
 	}
 	
-	if (IsValid(TurnInPlaceState.TurnInPlaceSettings) && ALS_ENSURE(IsValid(TurnInPlaceState.TurnInPlaceSettings->Sequence)))
+	if (IsValid(TurnInPlaceState.TurnInPlaceSettings) && ALS_ENSURE(IsValid(TurnInPlaceState.TurnInPlaceSettings->Montage)))
 	{
-		// only do this once per turn
-		if (TurnInPlaceState.CurveTime < UE_SMALL_NUMBER)
-		{
-			TurnInPlaceState.QueuedSettings = TurnInPlaceState.TurnInPlaceSettings;
-			TurnInPlaceState.QueuedSlotName = TurnInPlaceState.TurnInPlaceSlotName;
-			TurnInPlaceState.QueuedTurnYawAngle = ViewStateYawAngle;
-
-			CharacterOwner->GetAnimInstance()->PlayQueuedTurnInPlaceAnimation(TurnInPlaceState);
-		}
-		
+		//scale the play rate by the queued turn yaw angle
 		TurnInPlaceState.PlayRate = TurnInPlaceState.TurnInPlaceSettings->PlayRate;
 		if (TurnInPlaceState.TurnInPlaceSettings->bScalePlayRateByAnimatedTurnAngle)
 		{
 			TurnInPlaceState.PlayRate *= FMath::Abs(TurnInPlaceState.QueuedTurnYawAngle / TurnInPlaceState.TurnInPlaceSettings->AnimatedTurnAngle);
 		}
 		
-		const auto DeltaYawAngle{TurnInPlaceState.TurnInPlaceSettings->RotationYawSpeedCurve->GetFloatValue(TurnInPlaceState.CurveTime) * DeltaTime * TurnInPlaceState.PlayRate};
-
-		if (FMath::Abs(DeltaYawAngle) > UE_SMALL_NUMBER)
-		{
-			auto NewRotation{GetActorRotation_GMC()};
-			NewRotation.Yaw += DeltaYawAngle;
-
-			SetActorRotation_GMC(NewRotation, false);
-
-			RefreshLocomotionLocationAndRotation();
-			RefreshTargetYawAngleUsingLocomotionRotation();
-		}
+		//scale the root motion by the play rate
+		AnimRootMotionRotationScale = TurnInPlaceState.PlayRate;
 		
-		TurnInPlaceState.CurveTime += DeltaTime * TurnInPlaceState.PlayRate;
-
+		if (!HasActiveMontage(MontageTracker))
+		{
+			PlayMontage_Blocking(CharacterOwner->GetMesh(), MontageTracker, TurnInPlaceState.TurnInPlaceSettings->Montage, 0.0f, TurnInPlaceState.TurnInPlaceSettings->PlayRate);
+		}
+		RefreshTargetYawAngleUsingLocomotionRotation();
 	}
 }
 

@@ -126,9 +126,6 @@ protected:
 	FAlsRotateInPlaceState RotateInPlaceState;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State", Transient)
-	FAlsTurnInPlaceState TurnInPlaceState;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State", Transient)
 	FAlsRagdollingAnimationState RagdollingState;
 
 public:
@@ -315,11 +312,6 @@ private:
 
 protected:
 	void RefreshRotateInPlaceOnGameThread();
-
-	// Turn In Place
-
-public:
-	void PlayQueuedTurnInPlaceAnimation(FAlsTurnInPlaceState& TurnInPlaceState);
 
 	// Ragdolling
 

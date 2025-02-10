@@ -26,6 +26,10 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Settings", Transient)
 	uint8 bAllowImprovedPenetrationAdjustment : 1 {true};
 
+	UPROPERTY(BlueprintReadWrite, Category = "General Movement Component")
+	/// Scaling factor applied to animation root motion translation on this pawn.
+	float AnimRootMotionRotationScale{1.f};
+
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<AAlsCharacter> CharacterOwner;
@@ -214,6 +218,8 @@ protected:
 	void MovementUpdate_Implementation(float DeltaSeconds) override;
 	
 	void MovementUpdateSimulated_Implementation(float DeltaSeconds) override;
+
+	void ApplyAnimRootMotionRotation(const FGMC_RootMotionExtractionSettings& ExtractionSettings, float MontageDelta, float DeltaSeconds) override;
 	
 private:
 	EGMC_CollisionShape InterpToSphereAndSwitchCollisionShape(EGMC_CollisionShape CurrentShape, float SphereRadius, float DeltaSeconds);
