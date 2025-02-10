@@ -1492,7 +1492,7 @@ float UAlsCharacterMovementComponent::CalculateGroundedMovingRotationInterpolati
 
 bool UAlsCharacterMovementComponent::IsRotateInPlaceAllowed() const
 {
-	return (RotationMode == AlsRotationModeTags::Aiming || ViewMode == AlsViewModeTags::FirstPerson) && IsMovingOnGround();
+	return (RotationMode == AlsRotationModeTags::Aiming || ViewMode == AlsViewModeTags::FirstPerson) && IsMovingOnGround() && !bChangingStance;
 }
 
 void UAlsCharacterMovementComponent::ApplyRotateInPlace(const float DeltaTime)
@@ -1584,7 +1584,7 @@ void UAlsCharacterMovementComponent::ApplyRotateInPlace(const float DeltaTime)
 bool UAlsCharacterMovementComponent::IsTurnInPlaceAllowed()
 {
 	return RotationMode == AlsRotationModeTags::ViewDirection && ViewMode != AlsViewModeTags::FirstPerson &&
-		!LocomotionState.bMoving && IsMovingOnGround() && LocomotionState.TimeSinceLanding == 0.0f && !LocomotionState.bHasInput;
+		!LocomotionState.bMoving && IsMovingOnGround() && LocomotionState.TimeSinceLanding == 0.0f && !LocomotionState.bHasInput && !bChangingStance;
 }
 
 void UAlsCharacterMovementComponent::ApplyTurnInPlace(float DeltaTime)

@@ -111,6 +111,7 @@ void UAlsCharacterMovementComponent::Stand(EGMC_CollisionShape CurrentCollisionS
 	if (CurrentCollisionShape == EGMC_CollisionShape::VerticalCapsule)
 	{
 		const float ChangeAmount = LerpRootCollisionHalfHeight(StandingHalfHeight, ChangeStanceSpeed, 0.99f, DeltaSeconds, true, EGMC_AdjustDirection::Up);
+		bChangingStance = ChangeAmount > 0.f;
 		const bool bMovedUp = ChangeAmount > 0.f;
 		if (bMovedUp)
 		{
@@ -131,6 +132,7 @@ void UAlsCharacterMovementComponent::Crouch(EGMC_CollisionShape CurrentCollision
 	{
 		const auto AdjustDirection = GetRootCollisionHalfHeight(true) < CrouchedHalfHeight ? EGMC_AdjustDirection::Up : EGMC_AdjustDirection::Down;
 		const float ChangeAmount = LerpRootCollisionHalfHeight(CrouchedHalfHeight, ChangeStanceSpeed, 0.99f, DeltaSeconds, true, AdjustDirection);
+		bChangingStance = ChangeAmount > 0.f;
 		const bool bMovedUp = ChangeAmount > 0.f && AdjustDirection == EGMC_AdjustDirection::Up;
 		if (bMovedUp)
 		{

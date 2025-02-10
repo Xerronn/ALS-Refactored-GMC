@@ -48,7 +48,7 @@ protected:
 
 	//settings
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GMC/ALS")
-	float ChangeStanceSpeed{100.f};
+	float ChangeStanceSpeed{50.f};
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GMC/ALS")
 	float JumpForce{500.f};
@@ -99,6 +99,9 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "State|Als Character")
 	bool bJustJumped{false};
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "State|Als Character")
+	bool bChangingStance{false};
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings|Als Character|Desired State")
 	bool bDesiredRagdolling{false};
