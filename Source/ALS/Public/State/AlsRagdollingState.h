@@ -8,6 +8,12 @@ struct ALS_API FAlsRagdollingState
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS")
+	FVector TargetLocation;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS")
+	FRotator TargetRotation;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS")
 	FVector Velocity{ForceInit};
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS", Meta = (ForceUnits = "N"))

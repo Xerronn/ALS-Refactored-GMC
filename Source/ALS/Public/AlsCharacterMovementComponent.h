@@ -140,9 +140,6 @@ protected:
 	FAlsViewState ViewState;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State|Als Character", Transient)
-	FVector_NetQuantizeNormal InputDirection{ForceInit};
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State|Als Character", Transient)
 	FAlsLocomotionState LocomotionState;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State|Als Character", Transient)
@@ -153,9 +150,6 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State|Als Character", Transient)
 	FAlsTurnInPlaceState TurnInPlaceState;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State|Als Character", Transient)
-	FVector_NetQuantize RagdollTargetLocation{ForceInit};
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State|Als Character", Transient)
 	FAlsRagdollingState RagdollingState;
@@ -570,43 +564,40 @@ protected:
 
 public:
 	const FAlsRagdollingState& GetRagdollingState() const;
-//
-// 	bool IsRagdollingAllowedToStart() const;
-//
-// 	UFUNCTION(BlueprintCallable, Category = "ALS|Character")
-// 	void StartRagdolling();
-//
-// private:
-// 	void StartRagdollingImplementation();
-//
-// // protected:
-// // 	UFUNCTION(BlueprintNativeEvent, Category = "Als Character")
-// // 	void OnRagdollingStarted();
-//
-// public:
-// 	bool IsRagdollingAllowedToStop() const;
-//
-// 	UFUNCTION(BlueprintCallable, Category = "ALS|Character", Meta = (ReturnDisplayName = "Success"))
-// 	bool StopRagdolling();
-//
-// private:
-// 	void StopRagdollingImplementation();
-//
-// protected:
-// 	UFUNCTION(BlueprintNativeEvent, Category = "Als Character")
-// 	UAnimMontage* SelectGetUpMontage(bool bRagdollFacingUpward);
-//
-// 	// UFUNCTION(BlueprintNativeEvent, Category = "Als Character")
-// 	// void OnRagdollingEnded();
-//
-// private:
-// 	void SetRagdollTargetLocation(const FVector& NewTargetLocation);
-//
-// 	void RefreshRagdolling(float DeltaTime);
-//
-// 	FVector RagdollTraceGround(bool& bGrounded) const;
-//
-// 	void ConstraintRagdollSpeed() const;
+
+	bool IsRagdollingAllowedToStart() const;
+
+private:
+	UFUNCTION(BlueprintCallable, Category = "ALS|Character")
+	void StartRagdolling();
+
+protected:
+	void ApplyDesiredRagdoll(const bool bDesiredRagdoll, float DeltaSeconds);
+
+	UFUNCTION(BlueprintNativeEvent, Category = "Als Character")
+	void OnRagdollingStarted();
+
+public:
+	bool IsRagdollingAllowedToStop() const;
+	
+private:
+	UFUNCTION(BlueprintCallable, Category = "ALS|Character", Meta = (ReturnDisplayName = "Success"))
+	bool StopRagdolling();
+
+
+protected:
+	UFUNCTION(BlueprintNativeEvent, Category = "Als Character")
+	UAnimMontage* SelectGetUpMontage(bool bRagdollFacingUpward);
+
+	UFUNCTION(BlueprintNativeEvent, Category = "Als Character")
+	void OnRagdollingEnded();
+
+private:
+	void RefreshRagdolling(float DeltaTime);
+
+	FVector RagdollTraceGround(bool& bGrounded) const;
+
+	void ConstraintRagdollSpeed() const;
 };
 
 

@@ -22,7 +22,7 @@ UAlsCharacterMovementComponent::UAlsCharacterMovementComponent()
 	GroundFriction = 0.3f;
 	InputAccelerationGrounded = 2048.f;
 	FallControl = 0.15f;
-
+	
 	RotationRate = 0.f;
 	bOrientToControlRotationDirection = false;
 	bOrientToInputDirection = false;
@@ -116,13 +116,13 @@ void UAlsCharacterMovementComponent::BindReplicationData_Implementation()
 		EGMC_InterpolationFunction::NearestNeighbour
 	);
 	
-	// BindBool(
-	// 	bWantsToRagdoll,
-	// 	EGMC_PredictionMode::ClientAuth_Input,
-	// 	EGMC_CombineMode::CombineIfUnchanged,
-	// 	EGMC_SimulationMode::PeriodicAndOnChange_Output,
-	// 	EGMC_InterpolationFunction::NearestNeighbour
-	// );
+	BindBool(
+		bDesiredRagdolling,
+		EGMC_PredictionMode::ClientAuth_Input,
+		EGMC_CombineMode::CombineIfUnchanged,
+		EGMC_SimulationMode::PeriodicAndOnChange_Output,
+		EGMC_InterpolationFunction::NearestNeighbour
+	);
 
 	BindGameplayTag(
 		DesiredStance,
@@ -237,7 +237,7 @@ void UAlsCharacterMovementComponent::BindReplicationData_Implementation()
 		LocomotionAction,
 		EGMC_PredictionMode::ServerAuth_Output_ClientValidated,
 		EGMC_CombineMode::AlwaysCombine,
-		EGMC_SimulationMode::Periodic_Output,
+		EGMC_SimulationMode::None,
 		EGMC_InterpolationFunction::NearestNeighbour
 	);
 	
@@ -324,11 +324,19 @@ void UAlsCharacterMovementComponent::BindReplicationData_Implementation()
 
 	//start of actions
 	BindCompressedVector(
-		RagdollTargetLocation,
+		RagdollingState.TargetLocation,
 		EGMC_PredictionMode::ServerAuth_Output_ClientValidated,
 		EGMC_CombineMode::AlwaysCombine,
 		EGMC_SimulationMode::Periodic_Output,
-		EGMC_InterpolationFunction::NearestNeighbour
+		EGMC_InterpolationFunction::Linear
+	);
+
+	BindCompressedRotator(
+		RagdollingState.TargetRotation,
+		EGMC_PredictionMode::ServerAuth_Output_ClientValidated,
+		EGMC_CombineMode::AlwaysCombine,
+		EGMC_SimulationMode::Periodic_Output,
+		EGMC_InterpolationFunction::Linear
 	);
 	//end of actions
 	
@@ -415,12 +423,12 @@ void UAlsCharacterMovementComponent::MovementUpdate_Implementation(float DeltaSe
 
 	// StartMantlingInAir();
 	// RefreshMantling();
-	// RefreshRagdolling(DeltaSeconds);
+	RefreshRagdolling(DeltaSeconds);
 	// RefreshRolling(DeltaTime);
 
 	ApplyDesiredJump(bDesiredJumping, DeltaSeconds);
 
-	// ApplyDesiredRagdoll(bWantsToRagdoll, DeltaSeconds);
+	ApplyDesiredRagdoll(bDesiredRagdolling, DeltaSeconds);
 
 	RefreshLocomotionLate();
 
@@ -447,12 +455,12 @@ void UAlsCharacterMovementComponent::MovementUpdateSimulated_Implementation(floa
 
 	// StartMantlingInAir();
 	// RefreshMantling();
-	// RefreshRagdolling(DeltaSeconds);
+	RefreshRagdolling(DeltaSeconds);
 	// RefreshRolling(DeltaTime);
 
 	ApplyDesiredJump_Simulated(bJustJumped, DeltaSeconds);
 
-	// ApplyDesiredRagdoll(bWantsToRagdoll, DeltaSeconds);
+	ApplyDesiredRagdoll(bDesiredRagdolling, DeltaSeconds);
 
 	RefreshLocomotionLate();
 
@@ -638,7 +646,7 @@ void UAlsCharacterMovementComponent::OnMovementModeChanged_Implementation(EGMC_M
 		if (Settings->Ragdolling.bStartRagdollingOnLand &&
 		    LocomotionState.Velocity.Z <= -Settings->Ragdolling.RagdollingOnLandSpeedThreshold)
 		{
-			// StartRagdolling();
+			bDesiredRagdolling = true;
 		}
 		else if (Settings->Rolling.bStartRollingOnLand &&
 		         LocomotionState.Velocity.Z <= -Settings->Rolling.RollingOnLandSpeedThreshold)
@@ -666,11 +674,23 @@ void UAlsCharacterMovementComponent::OnMovementModeChanged_Implementation(EGMC_M
 	{
 		// If the character is currently rolling, then enable ragdolling.
 
-		// StartRagdolling();
+		bDesiredRagdolling = true;
 	}
 	
 	Super::OnMovementModeChanged_Implementation(PreviousMovementMode);
 }
+
+void UAlsCharacterMovementComponent::ApplyDesiredRagdoll(const bool bDesiredRagdoll, float DeltaSeconds)
+{
+	if (bDesiredRagdolling)
+	{
+		StartRagdolling();
+	} else
+	{
+		StopRagdolling();
+	}
+}
+
 
 void UAlsCharacterMovementComponent::SetDesiredAiming(const bool bNewDesiredAiming)
 {

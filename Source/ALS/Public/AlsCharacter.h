@@ -47,6 +47,15 @@ protected:
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere)
 	TObjectPtr<UAlsCameraComponent> Camera;
 
+	//Taken from Character.h
+	/** Saved rotation offset of mesh. */
+	UPROPERTY()
+	FQuat BaseRotationOffset;
+
+	/** Saved translation offset of mesh. */
+	UPROPERTY()
+	FVector BaseTranslationOffset;
+
 public:
 	explicit AAlsCharacter(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
@@ -56,6 +65,13 @@ public:
 	static FName FPSComponentName;
 
 	virtual void PostInitializeComponents() override;
+
+	/** Get the saved translation offset of mesh. This is how much extra offset is applied from the center of the capsule. */
+	UFUNCTION(BlueprintCallable, Category=Character)
+	FVector GetBaseTranslationOffset() const { return BaseTranslationOffset; }
+
+	/** Get the saved rotation offset of mesh. This is how much extra rotation is applied from the capsule rotation. */
+	virtual FQuat GetBaseRotationOffset() const { return BaseRotationOffset; }
 
 protected:
 	virtual void BeginPlay() override;

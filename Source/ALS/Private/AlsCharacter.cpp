@@ -80,6 +80,9 @@ void AAlsCharacter::PostInitializeComponents()
 	
 	AnimationInstance = Cast<UAlsAnimationInstance>(GetMesh()->GetAnimInstance());
 
+	BaseTranslationOffset = Mesh->GetRelativeLocation();
+	BaseRotationOffset = Mesh->GetRelativeRotation().Quaternion();
+
 	Super::PostInitializeComponents();
 }
 
