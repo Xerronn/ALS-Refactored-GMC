@@ -217,6 +217,8 @@ protected:
 	void MovementUpdateSimulated_Implementation(float DeltaSeconds) override;
 
 	void ApplyAnimRootMotionRotation(const FGMC_RootMotionExtractionSettings& ExtractionSettings, float MontageDelta, float DeltaSeconds) override;
+
+	void OnMontageCompleted(UAnimMontage* Montage, float Position, float PlayRate, float MontageDelta, float DeltaSeconds) override;
 	
 private:
 	EGMC_CollisionShape InterpToSphereAndSwitchCollisionShape(EGMC_CollisionShape CurrentShape, float SphereRadius, float DeltaSeconds);
@@ -596,8 +598,6 @@ private:
 	void RefreshRagdolling(float DeltaTime);
 
 	FVector RagdollTraceGround(bool& bGrounded) const;
-
-	void ConstraintRagdollSpeed() const;
 };
 
 

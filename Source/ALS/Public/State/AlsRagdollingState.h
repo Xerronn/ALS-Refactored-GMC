@@ -15,6 +15,9 @@ struct ALS_API FAlsRagdollingState
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS")
 	FVector Velocity{ForceInit};
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS")
+	FVector AngularVelocity;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS", Meta = (ForceUnits = "N"))
 	float PullForce{0.0f};

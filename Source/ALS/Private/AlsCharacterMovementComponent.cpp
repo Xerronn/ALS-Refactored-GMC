@@ -1053,6 +1053,16 @@ FVector UAlsCharacterMovementComponent::PreProcessInputVector_Implementation(FVe
 	return Super::PreProcessInputVector_Implementation(InRawInputVector);
 }
 
+void UAlsCharacterMovementComponent::OnMontageCompleted(UAnimMontage* Montage, float Position, float PlayRate, float MontageDelta, float DeltaSeconds)
+{
+	if (LocomotionAction == AlsLocomotionActionTags::GettingUp)
+	{
+		SetLocomotionAction(FGameplayTag::EmptyTag);
+	}
+	Super::OnMontageCompleted(Montage, Position, PlayRate, MontageDelta, DeltaSeconds);
+}
+
+
 void UAlsCharacterMovementComponent::RefreshInput(const float DeltaTime)
 {
 	if (IsSimulatedProxy())
@@ -1512,7 +1522,8 @@ float UAlsCharacterMovementComponent::CalculateGroundedMovingRotationInterpolati
 
 bool UAlsCharacterMovementComponent::IsRotateInPlaceAllowed() const
 {
-	return (RotationMode == AlsRotationModeTags::Aiming || ViewMode == AlsViewModeTags::FirstPerson) && IsMovingOnGround() && !bChangingStance;
+	return (RotationMode == AlsRotationModeTags::Aiming || ViewMode == AlsViewModeTags::FirstPerson) &&
+		IsMovingOnGround() && !bChangingStance && !LocomotionAction.IsValid();
 }
 
 void UAlsCharacterMovementComponent::ApplyRotateInPlace(const float DeltaTime)
@@ -1604,7 +1615,8 @@ void UAlsCharacterMovementComponent::ApplyRotateInPlace(const float DeltaTime)
 bool UAlsCharacterMovementComponent::IsTurnInPlaceAllowed()
 {
 	return RotationMode == AlsRotationModeTags::ViewDirection && ViewMode != AlsViewModeTags::FirstPerson &&
-		!LocomotionState.bMoving && IsMovingOnGround() && LocomotionState.TimeSinceLanding == 0.0f && !LocomotionState.bHasInput && !bChangingStance;
+		!LocomotionAction.IsValid() && !LocomotionState.bMoving && IsMovingOnGround() &&
+			LocomotionState.TimeSinceLanding == 0.0f && !LocomotionState.bHasInput && !bChangingStance;
 }
 
 void UAlsCharacterMovementComponent::ApplyTurnInPlace(float DeltaTime)
@@ -1617,8 +1629,10 @@ void UAlsCharacterMovementComponent::ApplyTurnInPlace(float DeltaTime)
 	if (!IsTurnInPlaceAllowed())
 	{
 		AnimRootMotionRotationScale = 1.0f;
+		if (TurnInPlaceState.ActivationDelay > 0.0f) {
+			StopMontage(CharacterOwner->GetMesh(), MontageTracker, Settings->TurnInPlace.BlendDuration, true);
+		}
 		TurnInPlaceState.ActivationDelay = 0.0f;
-		StopMontage(CharacterOwner->GetMesh(), MontageTracker, Settings->TurnInPlace.BlendDuration, true);
 		return;
 	}
 	
