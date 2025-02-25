@@ -103,24 +103,6 @@ void UAlsAnimationInstance::NativeUpdateAnimation(const float DeltaTime)
 		return;
 	}
 
-	auto* Mesh{GetSkelMeshComponent()};
-
-	if (Mesh->IsUsingAbsoluteRotation() && IsValid(Mesh->GetAttachParent()))
-	{
-		const auto& ParentTransform{Mesh->GetAttachParent()->GetComponentTransform()};
-
-		// Manually synchronize mesh rotation with character rotation.
-
-		Mesh->MoveComponent(FVector::ZeroVector, ParentTransform.GetRotation(), false);
-
-		// Re-cache proxy transforms to match the modified mesh transform.
-
-		const auto& Proxy{GetProxyOnGameThread<FAnimInstanceProxy>()};
-		const_cast<FTransform&>(Proxy.GetComponentTransform()) = Mesh->GetComponentTransform();
-		const_cast<FTransform&>(Proxy.GetComponentRelativeTransform()) = Mesh->GetRelativeTransform();
-		const_cast<FTransform&>(Proxy.GetActorTransform()) = Character->GetActorTransform();
-	}
-
 #if WITH_EDITORONLY_DATA && ENABLE_DRAW_DEBUG
 	bDisplayDebugTraces = UAlsDebugUtility::ShouldDisplayDebugForActor(Character, UAlsConstants::TracesDebugDisplayName());
 #endif
@@ -143,7 +125,7 @@ void UAlsAnimationInstance::NativeUpdateAnimation(const float DeltaTime)
 	RefreshRotateInPlaceOnGameThread();
 	RefreshInAirOnGameThread();
 	RefreshFeetOnGameThread();
-	RefreshRagdollingOnGameThread();
+	RefreshRagdollingOnGameThread(DeltaTime);
 }
 
 void UAlsAnimationInstance::NativeThreadSafeUpdateAnimation(const float DeltaTime)
@@ -1485,12 +1467,13 @@ void UAlsAnimationInstance::RefreshRotateInPlaceOnGameThread()
 	RotateInPlaceState.PlayRate = RotateInPlace.PlayRate;
 }
 
-void UAlsAnimationInstance::RefreshRagdollingOnGameThread()
+void UAlsAnimationInstance::RefreshRagdollingOnGameThread(float DeltaTime)
 {
 	check(IsInGameThread())
 
 	if (LocomotionAction != AlsLocomotionActionTags::Ragdolling)
 	{
+		RagdollingState.AdjustmentsNeeded = false;
 		return;
 	}
 
@@ -1499,6 +1482,20 @@ void UAlsAnimationInstance::RefreshRagdollingOnGameThread()
 	static constexpr auto ReferenceSpeed{1000.0f};
 
 	RagdollingState.FlailPlayRate = UAlsMath::Clamp01(UE_REAL_TO_FLOAT(Character->GetCharacterMovement()->GetRagdollingState().Velocity.Size() / ReferenceSpeed));
+
+	// Smooth the target rotation and location to remove jitters
+	const auto& CharacterRagdollState = Character->GetCharacterMovement()->GetRagdollingState();
+	RagdollingState.AdjustmentsNeeded = !CharacterRagdollState.TargetLocation.IsZero() || !CharacterRagdollState.TargetRotation.IsZero();
+
+	if (RagdollingState.AdjustmentsNeeded)
+	{
+		FVector PelvisLocation;
+		FRotator PelvisRotation;
+		GetSkelMeshComponent()->GetSocketWorldLocationAndRotation(UAlsConstants::PelvisBoneName(), PelvisLocation, PelvisRotation);
+		RagdollingState.TargetLocation = FMath::VInterpTo(PelvisLocation, CharacterRagdollState.TargetLocation, DeltaTime, 5.f);
+		RagdollingState.TargetRotation= FMath::RInterpTo(PelvisRotation, CharacterRagdollState.TargetRotation, DeltaTime, 5.f);
+	}
+
 }
 
 FPoseSnapshot& UAlsAnimationInstance::SnapshotFinalRagdollPose()

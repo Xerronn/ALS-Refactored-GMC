@@ -57,7 +57,7 @@ EGMC_CollisionShape UAlsCharacterMovementComponent::InterpToSphereAndSwitchColli
 
 void UAlsCharacterMovementComponent::MaintainMeshOffset()
 {
-	if (!SkeletalMesh)
+	if (!SkeletalMesh || LocomotionAction == AlsLocomotionActionTags::Ragdolling)
 	{
 		return;
 	}
@@ -67,7 +67,7 @@ void UAlsCharacterMovementComponent::MaintainMeshOffset()
 
 void UAlsCharacterMovementComponent::MaintainMeshOffsetSimulated()
 {
-	if (!SkeletalMesh)
+	if (!SkeletalMesh || LocomotionAction == AlsLocomotionActionTags::Ragdolling)
 	{
 		return;
 	}
@@ -81,19 +81,19 @@ void UAlsCharacterMovementComponent::MaintainMeshOffsetSimulated()
 		{
 			return;
 		}
-
+	
 		const auto& StartState = MoveHistory[StartIdx].OutputState;
 		const auto& TargetState = MoveHistory[TargetIdx].OutputState;
-
+	
 		const uint8 StartShape = StartState.UnsignedInt4.Read(BI_CurrentRootCollisionShape);
 		const uint8 TargetShape = TargetState.UnsignedInt4.Read(BI_CurrentRootCollisionShape);
-
+	
 		if (StartShape != TargetShape)
 		{
 			const double StartTime = MoveHistory[StartIdx].MetaData.Timestamp;
 			const double TargetTime = MoveHistory[TargetIdx].MetaData.Timestamp;
 			const float Alpha = FMath::Clamp((SmoothingTime - StartTime) / FMath::Max(TargetTime - StartTime, (double)MIN_DELTA_TIME), 0., 1.);
-
+	
 			auto& NoSmoothState = const_cast<FGMC_PawnState&>(Alpha < 0.5 ? StartState : TargetState);
 			ProcessSyncData(NoSmoothState, {DataOp::Apply}, AliasData, bUseRelativeValuesForSimulation, this);
 		}
@@ -178,14 +178,14 @@ void UAlsCharacterMovementComponent::StartRagdolling()
 	bHasRootMotion = false;
 
 	//detach mesh so that the capsule updates do not affect the mesh
+	SetComponentToSmooth(nullptr);
 	CharacterMesh->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
 	
 	// Disable capsule collision and enable mesh physics simulation.
-	
-	CharacterOwner->GetCapsuleComponent()->SetCollisionProfileName(FName("Spectator"), true);
-	
+	CharacterOwner->GetCapsuleComponent()->SetCollisionProfileName(FName("Spectator"), false);
 	CharacterMesh->SetCollisionObjectType(ECC_PhysicsBody);
 	CharacterMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	
 	if (GetOwnerRole() >= ROLE_Authority)
 	{
 		CharacterMesh->SetSimulatePhysics(true);
@@ -193,13 +193,10 @@ void UAlsCharacterMovementComponent::StartRagdolling()
 	{
 		CharacterMesh->SetAllBodiesBelowSimulatePhysics(UAlsConstants::PelvisBoneName(),true, false);
 	}
-
+	
 	CharacterMesh->SetAllBodiesBelowLinearVelocity(UAlsConstants::PelvisBoneName(), GetLinearVelocity_GMC(), true);
 	
 	SetLocomotionAction(AlsLocomotionActionTags::Ragdolling);
-
-	RagdollingState.TargetLocation = FVector::ZeroVector;
-	RagdollingState.TargetRotation = FRotator::ZeroRotator;
 	
 	OnRagdollingStarted();
 }
@@ -213,42 +210,20 @@ void UAlsCharacterMovementComponent::RefreshRagdolling(const float DeltaTime)
 
 	TObjectPtr CharacterMesh = CharacterOwner->GetMesh();
 	
-	// Since we are dealing with physics here, we should not use functions such as USkinnedMeshComponent::GetSocketTransform() as
-	// they may return an incorrect result in situations like when the animation blueprint is not ticking or when URO is enabled.
-	FVector PelvisLocation;
-	FRotator PelvisRotation;
-	SkeletalMesh->GetSocketWorldLocationAndRotation(UAlsConstants::PelvisBoneName(), PelvisLocation, PelvisRotation);
-
 	//set the ragdoll target location from the authority
 	if (GetOwnerRole() >= ROLE_Authority)
 	{
-		RagdollingState.TargetLocation = PelvisLocation;
-		RagdollingState.TargetRotation = PelvisRotation;
+		SkeletalMesh->GetSocketWorldLocationAndRotation(
+			UAlsConstants::PelvisBoneName(),
+			RagdollingState.TargetLocation,
+			RagdollingState.TargetRotation
+			);
 	}
 
 	if (!RagdollingState.TargetLocation.IsZero())
 	{
 		bool bGrounded;
 		SetActorLocation_GMC(RagdollTraceGround(bGrounded), true);
-	}
-	
-	if (GetOwnerRole() < ROLE_Authority && !RagdollingState.TargetLocation.IsZero())
-	{
-		// // Teleport the ragdoll to the correct location.
-		//
-		// FVector PelvisTarget = GetActorLocation_GMC();
-		// PelvisTarget.Z = PelvisLocation.Z;
-		//
-		// const FVector BoneDelta = PelvisTarget - PelvisLocation;
-		// const FVector PelvisOffset = PelvisLocation - SkeletalMesh->GetComponentLocation();
-		// const FVector ComponentTargetLocation = PelvisTarget - PelvisOffset;
-		//
-		// const FRotator ComponentTargetRotation = RagdollingState.TargetRotation - PelvisRotation + SkeletalMesh->GetComponentRotation();
-		// if (BoneDelta.Length() > KINDA_SMALL_NUMBER)
-		// {
-		// 	// Figure out what needs to be done to shift the pelvis to match, if needed.
-		// 	SkeletalMesh->SetWorldLocation(ComponentTargetLocation, false, nullptr, ETeleportType::TeleportPhysics);
-		// }
 	}
 	
 	// Use the speed to scale ragdoll joint strength for physical animation.
@@ -264,7 +239,7 @@ void UAlsCharacterMovementComponent::RefreshRagdolling(const float DeltaTime)
 
 FVector UAlsCharacterMovementComponent::RagdollTraceGround(bool& bGrounded) const
 {
-	auto RagdollLocation{!RagdollingState.TargetLocation.IsZero() ? RagdollingState.TargetLocation : GetActorLocation()};
+	auto RagdollLocation{!RagdollingState.TargetLocation.IsZero() ? RagdollingState.TargetLocation : GetActorLocation_GMC()};
 	
 	// We use a sphere sweep instead of a simple line trace to keep capsule
 	// movement consistent between ragdolling and regular character movement.
@@ -283,12 +258,6 @@ FVector UAlsCharacterMovementComponent::RagdollTraceGround(bool& bGrounded) cons
 	bGrounded = GetWorld()->SweepSingleByChannel(Hit, TraceStart, TraceEnd, FQuat::Identity,
 	                                             ECC_WorldStatic, FCollisionShape::MakeSphere(CapsuleRadius),
 	                                             QueryParameters, ResponseParameters);
-	
-	#if ENABLE_DRAW_DEBUG
-		// UAlsDebugUtility::DrawSweepSingleSphere(GetWorld(), TraceStart, TraceEnd, CapsuleRadius,
-		//                                         bGrounded, Hit, {0.0f, 0.25f, 1.0f},
-		//                                         {0.0f, 0.75f, 1.0f}, 0.0f);
-	#endif
 	
 	return FVector{
 		RagdollLocation.X, RagdollLocation.Y,
@@ -328,7 +297,7 @@ bool UAlsCharacterMovementComponent::StopRagdolling()
 	CharacterMesh->SetCollisionObjectType(ECC_Pawn);
 
 	TObjectPtr CharacterCapsule = CharacterOwner->GetCapsuleComponent();
-	CharacterCapsule->SetCollisionProfileName(FName("Pawn"), true);
+	CharacterCapsule->SetCollisionProfileName(FName("Pawn"), false);
 	
 	bool bGrounded;
 	const auto NewActorLocation{RagdollTraceGround(bGrounded)};
@@ -348,6 +317,8 @@ bool UAlsCharacterMovementComponent::StopRagdolling()
 													ActorTransform.TransformRotation(CharacterOwner->GetBaseRotationOffset()).Rotator());
 	
 	CharacterMesh->AttachToComponent(CharacterCapsule, FAttachmentTransformRules::KeepWorldTransform);
+	
+	SetComponentToSmooth(CharacterMesh);
 
 	// Restore the pelvis transform to the state it was in before we changed
 	// the character and mesh transforms to keep its world transform unchanged.
@@ -360,6 +331,9 @@ bool UAlsCharacterMovementComponent::StopRagdolling()
 		// We expect the pelvis bone to be the root bone or attached to it, so we can safely use the mesh transform here.
 		FinalRagdollPose.LocalTransforms[PelvisBoneIndex] = PelvisTransform.GetRelativeTransform(CharacterMesh->GetComponentTransform());
 	}
+
+	RagdollingState.TargetLocation = FVector::ZeroVector;
+	RagdollingState.TargetRotation = FRotator::ZeroRotator;
 	
 	SetLocomotionAction(FGameplayTag::EmptyTag);
 	

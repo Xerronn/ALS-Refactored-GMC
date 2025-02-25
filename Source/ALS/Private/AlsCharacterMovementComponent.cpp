@@ -93,6 +93,9 @@ void UAlsCharacterMovementComponent::BeginPlay()
 	DefaultRadius = Extent.X;
 
 	RotateInPlaceState.PlayRate = Settings->RotateInPlace.PlayRate.X;
+
+	RagdollingState.TargetLocation = FVector::ZeroVector;
+	RagdollingState.TargetRotation = FRotator::ZeroRotator;
 }
 
 void UAlsCharacterMovementComponent::BindReplicationData_Implementation()

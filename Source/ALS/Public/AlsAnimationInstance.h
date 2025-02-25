@@ -316,7 +316,7 @@ protected:
 	// Ragdolling
 
 private:
-	void RefreshRagdollingOnGameThread();
+	void RefreshRagdollingOnGameThread(float DeltaTime);
 
 public:
 	FPoseSnapshot& SnapshotFinalRagdollPose();
