@@ -29,6 +29,8 @@ void UAlsCharacterMovementComponent::SetupPlayerInputComponent_Implementation(UI
 		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Triggered, this, &UAlsCharacterMovementComponent::StartAimAction);
 		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Completed, this, &UAlsCharacterMovementComponent::StopAimAction);
 		EnhancedInputComponent->BindAction(RagdollAction, ETriggerEvent::Triggered, this, &UAlsCharacterMovementComponent::StartRagdollAction);
+		EnhancedInputComponent->BindAction(RollAction, ETriggerEvent::Triggered, this, &UAlsCharacterMovementComponent::StartRollAction);
+		EnhancedInputComponent->BindAction(RollAction, ETriggerEvent::Completed, this, &UAlsCharacterMovementComponent::StopRollAction);
 	}
 }
 
@@ -101,4 +103,14 @@ void UAlsCharacterMovementComponent::StopAimAction(const FInputActionInstance& I
 void UAlsCharacterMovementComponent::StartRagdollAction(const FInputActionInstance& InputAction)
 {
 	bDesiredRagdolling = !bDesiredRagdolling;
+}
+
+void UAlsCharacterMovementComponent::StartRollAction(const FInputActionInstance& InputAction)
+{
+	bDesiredRolling = true;
+}
+	
+void UAlsCharacterMovementComponent::StopRollAction(const FInputActionInstance& InputAction)
+{
+	bDesiredRolling = false;
 }

@@ -349,3 +349,25 @@ UAnimMontage* UAlsCharacterMovementComponent::SelectGetUpMontage_Implementation(
 {
 	return bRagdollFacingUpward ? Settings->Ragdolling.GetUpBackMontage : Settings->Ragdolling.GetUpFrontMontage;
 }
+
+bool UAlsCharacterMovementComponent::IsRollingAllowedToStart() const
+{
+	return !LocomotionAction.IsValid();
+}
+
+void UAlsCharacterMovementComponent::StartRolling(const float PlayRate)
+{
+	auto* Montage{SelectRollMontage()};
+
+	if (!ALS_ENSURE(IsValid(Montage)) || !IsRollingAllowedToStart())
+	{
+		return;
+	}
+	SetLocomotionAction(AlsLocomotionActionTags::Rolling);
+	PlayMontage_Blocking(CharacterOwner->GetMesh(), MontageTracker, Montage, 0.0f, PlayRate);
+}
+
+UAnimMontage* UAlsCharacterMovementComponent::SelectRollMontage_Implementation()
+{
+	return Settings->Rolling.Montage;
+}

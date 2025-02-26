@@ -127,6 +127,14 @@ void UAlsCharacterMovementComponent::BindReplicationData_Implementation()
 		EGMC_InterpolationFunction::NearestNeighbour
 	);
 
+	BindBool(
+		bDesiredRolling,
+		EGMC_PredictionMode::ClientAuth_Input,
+		EGMC_CombineMode::CombineIfUnchanged,
+		EGMC_SimulationMode::PeriodicAndOnChange_Output,
+		EGMC_InterpolationFunction::NearestNeighbour
+	);
+
 	BindGameplayTag(
 		DesiredStance,
 		EGMC_PredictionMode::ClientAuth_Input,
@@ -427,11 +435,11 @@ void UAlsCharacterMovementComponent::MovementUpdate_Implementation(float DeltaSe
 	// StartMantlingInAir();
 	// RefreshMantling();
 	RefreshRagdolling(DeltaSeconds);
-	// RefreshRolling(DeltaTime);
 
 	ApplyDesiredJump(bDesiredJumping, DeltaSeconds);
 
 	ApplyDesiredRagdoll(bDesiredRagdolling, DeltaSeconds);
+	ApplyDesiredRolling(bDesiredRolling, DeltaSeconds);
 
 	RefreshLocomotionLate();
 
@@ -459,11 +467,11 @@ void UAlsCharacterMovementComponent::MovementUpdateSimulated_Implementation(floa
 	// StartMantlingInAir();
 	// RefreshMantling();
 	RefreshRagdolling(DeltaSeconds);
-	// RefreshRolling(DeltaTime);
 
 	ApplyDesiredJump_Simulated(bJustJumped, DeltaSeconds);
 
 	ApplyDesiredRagdoll(bDesiredRagdolling, DeltaSeconds);
+	ApplyDesiredRolling(bDesiredRolling, DeltaSeconds);
 
 	RefreshLocomotionLate();
 
@@ -685,12 +693,21 @@ void UAlsCharacterMovementComponent::OnMovementModeChanged_Implementation(EGMC_M
 
 void UAlsCharacterMovementComponent::ApplyDesiredRagdoll(const bool bDesiredRagdoll, float DeltaSeconds)
 {
-	if (bDesiredRagdolling)
+	if (bDesiredRagdoll)
 	{
 		StartRagdolling();
 	} else
 	{
 		StopRagdolling();
+	}
+}
+
+void UAlsCharacterMovementComponent::ApplyDesiredRolling(const bool bDesiredRoll, float DeltaSeconds)
+{
+	static constexpr auto PlayRate{1.3f};
+	if (bDesiredRoll)
+	{
+		StartRolling(PlayRate);
 	}
 }
 
@@ -853,9 +870,9 @@ void UAlsCharacterMovementComponent::ApplyDesiredStance(const FGameplayTag& Stan
 	}
 	else if (LocomotionAction == AlsLocomotionActionTags::Rolling && Settings->Rolling.bCrouchOnStart)
 	{
-		DesiredStance = AlsStanceTags::Crouching;
-		Crouch(CurrentCollisionShape, DeltaSeconds);
-		SetStance(AlsStanceTags::Crouching);
+		// DesiredStance = AlsStanceTags::Crouching;
+		// Crouch(CurrentCollisionShape, DeltaSeconds);
+		// SetStance(AlsStanceTags::Crouching);
 	}
 }
 
@@ -1058,7 +1075,7 @@ FVector UAlsCharacterMovementComponent::PreProcessInputVector_Implementation(FVe
 
 void UAlsCharacterMovementComponent::OnMontageCompleted(UAnimMontage* Montage, float Position, float PlayRate, float MontageDelta, float DeltaSeconds)
 {
-	if (LocomotionAction == AlsLocomotionActionTags::GettingUp)
+	if (LocomotionAction == AlsLocomotionActionTags::GettingUp || LocomotionAction == AlsLocomotionActionTags::Rolling)
 	{
 		SetLocomotionAction(FGameplayTag::EmptyTag);
 	}

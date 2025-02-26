@@ -1481,7 +1481,7 @@ void UAlsAnimationInstance::RefreshRagdollingOnGameThread(float DeltaTime)
 
 	static constexpr auto ReferenceSpeed{1000.0f};
 
-	RagdollingState.FlailPlayRate = UAlsMath::Clamp01(UE_REAL_TO_FLOAT(Character->GetCharacterMovement()->GetRagdollingState().Velocity.Size() / ReferenceSpeed));
+	RagdollingState.FlailPlayRate = UAlsMath::Clamp01(UE_REAL_TO_FLOAT(Character->GetCharacterMovement()->GetLocomotionState().Velocity.Size() / ReferenceSpeed));
 
 	// Smooth the target rotation and location to remove jitters
 	const auto& CharacterRagdollState = Character->GetCharacterMovement()->GetRagdollingState();

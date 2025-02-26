@@ -6,7 +6,6 @@
 #include "State/AlsLocomotionState.h"
 #include "State/AlsMantlingState.h"
 #include "State/AlsRagdollingState.h"
-#include "State/AlsRollingState.h"
 #include "State/AlsRotateInPlaceState.h"
 #include "State/AlsTurnInPlaceState.h"
 #include "State/AlsViewState.h"
@@ -107,6 +106,9 @@ protected:
 	bool bDesiredRagdolling{false};
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings|Als Character|Desired State")
+	bool bDesiredRolling{false};
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings|Als Character|Desired State")
 	FGameplayTag DesiredRotationMode{AlsRotationModeTags::ViewDirection};
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings|Als Character|Desired State")
@@ -153,9 +155,6 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State|Als Character", Transient)
 	FAlsRagdollingState RagdollingState;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State|Als Character", Transient)
-	FAlsRollingState RollingState;
 	
 	//start of input handling
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
@@ -184,7 +183,9 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
 	TObjectPtr<UInputAction> RagdollAction{nullptr};
-	
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
+	TObjectPtr<UInputAction> RollAction{nullptr};
 
 public:
 	FAlsPhysicsRotationDelegate OnPhysicsRotation;
@@ -248,6 +249,10 @@ protected:
 	virtual void StopAimAction(const FInputActionInstance& InputAction);
 
 	virtual void StartRagdollAction(const FInputActionInstance& InputAction);
+	
+	virtual void StartRollAction(const FInputActionInstance& InputAction);
+	virtual void StopRollAction(const FInputActionInstance& InputAction);
+
 	//end of input actions
 
 public:
@@ -510,24 +515,21 @@ protected:
 
 	// Rolling
 
-// public:
-// 	UFUNCTION(BlueprintCallable, Category = "ALS|Character")
-// 	void StartRolling(float PlayRate = 1.0f);
-//
-// 	UFUNCTION(BlueprintNativeEvent, Category = "Als Character")
-// 	UAnimMontage* SelectRollMontage();
-//
-// 	bool IsRollingAllowedToStart(const UAnimMontage* Montage) const;
-//
-// private:
-// 	void StartRolling(float PlayRate, float TargetYawAngle);
-// 	
-// 	void StartRollingImplementation(UAnimMontage* Montage, float PlayRate, float InitialYawAngle, float TargetYawAngle);
-//
-// 	void RefreshRolling(float DeltaTime);
-//
-// 	void RefreshRollingPhysics(float DeltaTime);
-//
+public:
+	
+
+	UFUNCTION(BlueprintNativeEvent, Category = "Als Character")
+	UAnimMontage* SelectRollMontage();
+
+	bool IsRollingAllowedToStart() const;
+
+protected:
+	void ApplyDesiredRolling(const bool bDesiredRolling, float DeltaSeconds);
+
+private:
+	UFUNCTION(BlueprintCallable, Category = "ALS|Character")
+	void StartRolling(float PlayRate = 1.0f);
+
 // 	// Mantling
 //
 // public:
