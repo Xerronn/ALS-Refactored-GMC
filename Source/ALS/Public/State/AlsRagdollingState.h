@@ -12,19 +12,4 @@ struct ALS_API FAlsRagdollingState
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS")
 	FRotator TargetRotation;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS")
-	FVector Velocity{ForceInit};
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS")
-	FVector AngularVelocity;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS", Meta = (ForceUnits = "N"))
-	float PullForce{0.0f};
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS", Meta = (ClampMin = 0))
-	int32 SpeedLimitFrameTimeRemaining{0};
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS", Meta = (ClampMin = 0, ForceUnits = "cm/s"))
-	float SpeedLimit{0.0f};
 };
