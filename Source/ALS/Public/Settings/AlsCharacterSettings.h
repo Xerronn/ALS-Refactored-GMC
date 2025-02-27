@@ -32,6 +32,9 @@ public:
 	uint8 bSprintHasPriorityOverAiming : 1 {false};
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings")
+	uint8 bSprintForcesStanding : 1 {true};
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings")
 	uint8 bRotateToVelocityWhenSprinting : 1 {false};
 
 	// If checked, the character will automatically rotate towards the view direction on any movement input while the actor is not moving.

@@ -947,7 +947,7 @@ void UAlsCharacterMovementComponent::ApplyDesiredGait(const FGameplayTag& GaitTo
 
 	const auto ActualGait{CalculateActualGait(CurrentMaxAllowedGait)};
 	
-	if (GaitToApply == AlsGaitTags::Sprinting)
+	if (Settings->bSprintForcesStanding && GaitToApply == AlsGaitTags::Sprinting)
 	{
 		SetDesiredStance(AlsStanceTags::Standing);
 	}
