@@ -441,6 +441,8 @@ void UAlsCharacterMovementComponent::MovementUpdate_Implementation(float DeltaSe
 	ApplyDesiredRagdoll(bDesiredRagdolling, DeltaSeconds);
 	ApplyDesiredRolling(bDesiredRolling, DeltaSeconds);
 
+	ClearLocomotionAction();
+
 	RefreshLocomotionLate();
 
 	ApplyDesiredOverlayMode(DesiredOverlayMode);
@@ -472,6 +474,8 @@ void UAlsCharacterMovementComponent::MovementUpdateSimulated_Implementation(floa
 
 	ApplyDesiredRagdoll(bDesiredRagdolling, DeltaSeconds);
 	ApplyDesiredRolling(bDesiredRolling, DeltaSeconds);
+
+	ClearLocomotionAction();
 
 	RefreshLocomotionLate();
 
@@ -664,9 +668,7 @@ void UAlsCharacterMovementComponent::OnMovementModeChanged_Implementation(EGMC_M
 		{
 			static constexpr auto PlayRate{1.3f};
 
-			// StartRolling(PlayRate, LocomotionState.bHasVelocity
-			// 	                       ? LocomotionState.VelocityYawAngle
-			// 	                       : FMath::UnwindDegrees(GetActorRotation_GMC().Yaw));
+			StartRolling(PlayRate);
 		}
 		else
 		{
@@ -1064,6 +1066,17 @@ void UAlsCharacterMovementComponent::SetLocomotionAction(const FGameplayTag& New
 
 void UAlsCharacterMovementComponent::OnLocomotionActionChanged_Implementation(const FGameplayTag& PreviousLocomotionAction) {}
 
+void UAlsCharacterMovementComponent::ClearLocomotionAction()
+{
+	if (!MontageTracker.HasActiveMontage())
+	{
+		if (LocomotionAction == AlsLocomotionActionTags::GettingUp || LocomotionAction == AlsLocomotionActionTags::Rolling)
+		{
+			SetLocomotionAction(FGameplayTag::EmptyTag);
+		}
+	}
+}
+
 FVector UAlsCharacterMovementComponent::PreProcessInputVector_Implementation(FVector InRawInputVector)
 {
 	if (LocomotionAction.IsValid())
@@ -1073,14 +1086,6 @@ FVector UAlsCharacterMovementComponent::PreProcessInputVector_Implementation(FVe
 	return Super::PreProcessInputVector_Implementation(InRawInputVector);
 }
 
-void UAlsCharacterMovementComponent::OnMontageCompleted(UAnimMontage* Montage, float Position, float PlayRate, float MontageDelta, float DeltaSeconds)
-{
-	if (LocomotionAction == AlsLocomotionActionTags::GettingUp || LocomotionAction == AlsLocomotionActionTags::Rolling)
-	{
-		SetLocomotionAction(FGameplayTag::EmptyTag);
-	}
-	Super::OnMontageCompleted(Montage, Position, PlayRate, MontageDelta, DeltaSeconds);
-}
 
 
 void UAlsCharacterMovementComponent::RefreshInput(const float DeltaTime)

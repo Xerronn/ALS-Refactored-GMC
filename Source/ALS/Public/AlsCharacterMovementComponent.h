@@ -218,9 +218,6 @@ protected:
 	void MovementUpdateSimulated_Implementation(float DeltaSeconds) override;
 
 	void ApplyAnimRootMotionRotation(const FGMC_RootMotionExtractionSettings& ExtractionSettings, float MontageDelta, float DeltaSeconds) override;
-
-	void OnMontageCompleted(UAnimMontage* Montage, float Position, float PlayRate, float MontageDelta, float DeltaSeconds) override;
-	
 private:
 	EGMC_CollisionShape InterpToSphereAndSwitchCollisionShape(EGMC_CollisionShape CurrentShape, float SphereRadius, float DeltaSeconds);
 	void MaintainMeshOffset();
@@ -403,7 +400,7 @@ protected:
 	UFUNCTION(BlueprintNativeEvent, Category = "Als Character")
 	void OnOverlayModeChanged(const FGameplayTag& PreviousOverlayMode);
 
-// Locomotion Action
+	// Locomotion Action
 
 public:
 	const FGameplayTag& GetLocomotionAction() const;
@@ -414,7 +411,9 @@ protected:
 	UFUNCTION(BlueprintNativeEvent, Category = "Als Character")
 	void OnLocomotionActionChanged(const FGameplayTag& PreviousLocomotionAction);
 
-		// Input
+	void ClearLocomotionAction();
+
+	// Input
 
 protected:
 	virtual void RefreshInput(float DeltaTime);

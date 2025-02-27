@@ -352,7 +352,7 @@ UAnimMontage* UAlsCharacterMovementComponent::SelectGetUpMontage_Implementation(
 
 bool UAlsCharacterMovementComponent::IsRollingAllowedToStart() const
 {
-	return !LocomotionAction.IsValid();
+	return !LocomotionAction.IsValid() && IsMovingOnGround();
 }
 
 void UAlsCharacterMovementComponent::StartRolling(const float PlayRate)
@@ -364,7 +364,7 @@ void UAlsCharacterMovementComponent::StartRolling(const float PlayRate)
 		return;
 	}
 	SetLocomotionAction(AlsLocomotionActionTags::Rolling);
-	PlayMontage_Blocking(CharacterOwner->GetMesh(), MontageTracker, Montage, 0.0f, PlayRate);
+	PlayMontage_Blocking(CharacterOwner->GetMesh(), MontageTracker, Montage, 0.0f, PlayRate, true);
 }
 
 UAnimMontage* UAlsCharacterMovementComponent::SelectRollMontage_Implementation()
