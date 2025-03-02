@@ -870,12 +870,6 @@ void UAlsCharacterMovementComponent::ApplyDesiredStance(const FGameplayTag& Stan
 			SetStance(AlsStanceTags::Standing);
 		}
 	}
-	else if (LocomotionAction == AlsLocomotionActionTags::Rolling && Settings->Rolling.bCrouchOnStart)
-	{
-		// DesiredStance = AlsStanceTags::Crouching;
-		// Crouch(CurrentCollisionShape, DeltaSeconds);
-		// SetStance(AlsStanceTags::Crouching);
-	}
 }
 
 bool UAlsCharacterMovementComponent::CanCrouch() const
@@ -947,7 +941,7 @@ void UAlsCharacterMovementComponent::ApplyDesiredGait(const FGameplayTag& GaitTo
 
 	const auto ActualGait{CalculateActualGait(CurrentMaxAllowedGait)};
 	
-	if (Settings->bSprintForcesStanding && GaitToApply == AlsGaitTags::Sprinting)
+	if (Settings->bSprintForcesStanding && LocomotionState.bHasInput && GaitToApply == AlsGaitTags::Sprinting)
 	{
 		SetDesiredStance(AlsStanceTags::Standing);
 	}

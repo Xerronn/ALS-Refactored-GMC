@@ -57,7 +57,7 @@ EGMC_CollisionShape UAlsCharacterMovementComponent::InterpToSphereAndSwitchColli
 
 void UAlsCharacterMovementComponent::MaintainMeshOffset()
 {
-	if (!SkeletalMesh || LocomotionAction.IsValid())
+	if (!SkeletalMesh || LocomotionAction == AlsLocomotionActionTags::Ragdolling)
 	{
 		return;
 	}
@@ -67,7 +67,7 @@ void UAlsCharacterMovementComponent::MaintainMeshOffset()
 
 void UAlsCharacterMovementComponent::MaintainMeshOffsetSimulated()
 {
-	if (!SkeletalMesh || LocomotionAction.IsValid())
+	if (!SkeletalMesh || LocomotionAction == AlsLocomotionActionTags::Ragdolling)
 	{
 		return;
 	}
@@ -365,6 +365,13 @@ void UAlsCharacterMovementComponent::StartRolling(const float PlayRate)
 	}
 	SetLocomotionAction(AlsLocomotionActionTags::Rolling);
 	PlayMontage_Blocking(CharacterOwner->GetMesh(), MontageTracker, Montage, 0.0f, PlayRate, true);
+	
+	if (Settings->Rolling.bCrouchOnStart)
+	{
+		Crouch(GetRootCollisionShape(), 100000.f);
+
+		IsSimulatedPawn() ? MaintainMeshOffsetSimulated() : MaintainMeshOffset();
+	}
 }
 
 UAnimMontage* UAlsCharacterMovementComponent::SelectRollMontage_Implementation()
