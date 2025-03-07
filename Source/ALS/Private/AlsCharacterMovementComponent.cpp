@@ -1602,8 +1602,8 @@ void UAlsCharacterMovementComponent::ApplyRotateInPlace(const float DeltaTime)
 		{
 			RotateInPlaceCurve = Settings->RotateInPlace.StandingRotate90RightCurve;
 		}
-
-	} else
+	}
+	else
 	{
 		if (RotateInPlaceState.bRotatingLeft)
 		{
@@ -1614,18 +1614,21 @@ void UAlsCharacterMovementComponent::ApplyRotateInPlace(const float DeltaTime)
 			RotateInPlaceCurve = Settings->RotateInPlace.CrouchingRotate90RightCurve;
 		}
 	}
-	
-	const auto DeltaYawAngle{RotateInPlaceCurve->GetFloatValue(RotateInPlaceState.CurveTime) * DeltaTime * RotateInPlaceState.PlayRate};
 
-	if (FMath::Abs(DeltaYawAngle) > UE_SMALL_NUMBER)
+	if (IsValid(RotateInPlaceCurve))
 	{
-		auto NewRotation{GetActorRotation_GMC()};
-		NewRotation.Yaw += DeltaYawAngle;
+		const auto DeltaYawAngle{RotateInPlaceCurve->GetFloatValue(RotateInPlaceState.CurveTime) * DeltaTime * RotateInPlaceState.PlayRate};
 
-		SetActorRotation_GMC(NewRotation, false);
-
-		RefreshLocomotionLocationAndRotation();
-		RefreshTargetYawAngleUsingLocomotionRotation();
+		if (FMath::Abs(DeltaYawAngle) > UE_SMALL_NUMBER)
+		{
+			auto NewRotation{GetActorRotation_GMC()};
+			NewRotation.Yaw += DeltaYawAngle;
+		
+			SetActorRotation_GMC(NewRotation, false);
+		
+			RefreshLocomotionLocationAndRotation();
+			RefreshTargetYawAngleUsingLocomotionRotation();
+		}
 	}
 
 	RotateInPlaceState.CurveTime += DeltaTime * RotateInPlaceState.PlayRate;
