@@ -57,7 +57,7 @@ EGMC_CollisionShape UAlsCharacterMovementComponent::InterpToSphereAndSwitchColli
 
 void UAlsCharacterMovementComponent::MaintainMeshOffset()
 {
-	if (!SkeletalMesh || LocomotionAction == AlsLocomotionActionTags::Ragdolling)
+	if (!SkeletalMesh || LocomotionAction == AlsLocomotionActionTags::Ragdolling || LocomotionAction == AlsLocomotionActionTags::GettingUp)
 	{
 		return;
 	}
@@ -67,7 +67,7 @@ void UAlsCharacterMovementComponent::MaintainMeshOffset()
 
 void UAlsCharacterMovementComponent::MaintainMeshOffsetSimulated()
 {
-	if (!SkeletalMesh || LocomotionAction == AlsLocomotionActionTags::Ragdolling)
+	if (!SkeletalMesh || LocomotionAction == AlsLocomotionActionTags::Ragdolling || LocomotionAction == AlsLocomotionActionTags::GettingUp)
 	{
 		return;
 	}
@@ -151,93 +151,36 @@ bool UAlsCharacterMovementComponent::IsRagdollingAllowedToStart() const
 
 void UAlsCharacterMovementComponent::OnRagdollingStarted_Implementation() {}
 
-void UAlsCharacterMovementComponent::StartRagdolling()
+void UAlsCharacterMovementComponent::ToggleRagdolling(bool bActive)
 {
-	if (!IsRagdollingAllowedToStart())
+	if (bActive)
 	{
-		return;
+		if (PreviousRelativeMeshLocation.IsZero())
+		{
+			PreviousRelativeMeshLocation = SkeletalMesh->GetRelativeLocation();
+			PreviousRelativeMeshRotation = SkeletalMesh->GetRelativeRotation();
+		}
+
+		HaltMovement();
+
+		SetLocomotionAction(AlsLocomotionActionTags::Ragdolling);
+		OnRagdollingStarted();
+	}
+	else
+	{
+		const auto bRagdollFacingUpward{FRotator::NormalizeAxis(RagdollingState.TargetRotation.Roll) <= 0.0f};
+
+		SetLocomotionAction(AlsLocomotionActionTags::GettingUp);
+
+		PlayMontage_Blocking(CharacterOwner->GetMesh(), MontageTracker, SelectGetUpMontage(bRagdollFacingUpward), 0.0f, 1.0f);
+
+		RagdollingState.TargetLocation = FVector::ZeroVector;
+		RagdollingState.TargetRotation = FRotator::ZeroRotator;
 	}
 
-	RagdollingState.TargetLocation = FVector::ZeroVector;
-	RagdollingState.TargetRotation = FRotator::ZeroRotator;
-
-	TObjectPtr CharacterMesh = CharacterOwner->GetMesh();
-	
-	CharacterMesh->bUpdateJointsFromAnimation = true; // Required for the flail animation to work properly.
-	
-	if (!CharacterMesh->IsRunningParallelEvaluation() && CharacterMesh->GetBoneSpaceTransforms().Num() > 0)
-	{
-		CharacterMesh->UpdateRBJointMotors();
-	}
-	
-	// Stop any active montages.
-	static constexpr auto BlendOutDuration{0.2f};
-	CharacterMesh->GetAnimInstance()->Montage_Stop(BlendOutDuration);
-	if (MontageTracker.HasActiveRootMotionMontage())
-	{
-		MontageTracker.ClearActiveMontage();
-	}
-	RootMotionParams.Clear();
-	bHasRootMotion = false;
-
-	//detach mesh so that the capsule updates do not affect the mesh
-	SetComponentToSmooth(nullptr);
-	CharacterMesh->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
-	
-	// Disable capsule collision and enable mesh physics simulation.
-	CharacterOwner->GetCapsuleComponent()->SetCollisionProfileName(FName("Spectator"), false);
-	CharacterMesh->SetCollisionObjectType(ECC_PhysicsBody);
-	CharacterMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-	
-	if (GetOwnerRole() >= ROLE_Authority)
-	{
-		CharacterMesh->SetSimulatePhysics(true);
-	} else
-	{
-		CharacterMesh->SetAllBodiesBelowSimulatePhysics(UAlsConstants::PelvisBoneName(),true, false);
-	}
-	
-	CharacterMesh->SetAllBodiesBelowLinearVelocity(UAlsConstants::PelvisBoneName(), GetLinearVelocity_GMC(), true);
-	
-	SetLocomotionAction(AlsLocomotionActionTags::Ragdolling);
-	
-	OnRagdollingStarted();
-}
-
-void UAlsCharacterMovementComponent::RefreshRagdolling(const float DeltaTime)
-{
-	if (LocomotionAction != AlsLocomotionActionTags::Ragdolling)
-	{
-		return;
-	}
-
-	TObjectPtr CharacterMesh = CharacterOwner->GetMesh();
-	
-	//set the ragdoll target location from the authority
-	if (GetOwnerRole() >= ROLE_Authority)
-	{
-		SkeletalMesh->GetSocketWorldLocationAndRotation(
-			UAlsConstants::PelvisBoneName(),
-			RagdollingState.TargetLocation,
-			RagdollingState.TargetRotation
-			);
-	}
-
-	if (!RagdollingState.TargetLocation.IsZero())
-	{
-		bool bGrounded;
-		SetActorLocation_GMC(RagdollTraceGround(bGrounded), true);
-	}
-	
-	// Use the speed to scale ragdoll joint strength for physical animation.
-	
-	static constexpr auto ReferenceSpeed{1000.0f};
-	static constexpr auto Stiffness{25000.0f};
-	
-	const auto SpeedAmount{UAlsMath::Clamp01(UE_REAL_TO_FLOAT(GetLinearVelocity_GMC().Size() / ReferenceSpeed))};
-	
-	CharacterMesh->SetAllMotorsAngularDriveParams(SpeedAmount * Stiffness, 0.0f, 0.0f);
-	
+	bEnablePhysicsInteraction = !bActive;
+	RagdollingState.bFirstTick = bActive;
+	RagdollingState.bResetMesh = !bActive;
 }
 
 FVector UAlsCharacterMovementComponent::RagdollTraceGround(bool& bGrounded) const
@@ -315,8 +258,6 @@ bool UAlsCharacterMovementComponent::StopRagdolling()
 													ActorTransform.TransformRotation(CharacterOwner->GetBaseRotationOffset()).Rotator());
 	
 	CharacterMesh->AttachToComponent(CharacterCapsule, FAttachmentTransformRules::KeepWorldTransform);
-	
-	SetComponentToSmooth(CharacterMesh);
 	
 	// Restore the pelvis transform to the state it was in before we changed
 	// the character and mesh transforms to keep its world transform unchanged.

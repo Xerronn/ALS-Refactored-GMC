@@ -15,7 +15,7 @@ struct ALS_API FAlsRagdollingAnimationState
 	float FlailPlayRate{1.0f};
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS")
-	bool AdjustmentsNeeded{false};
+	bool bAdjustmentsNeeded{false};
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS")
 	FVector TargetLocation;

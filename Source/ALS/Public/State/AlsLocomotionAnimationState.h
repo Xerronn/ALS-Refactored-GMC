@@ -63,4 +63,8 @@ struct ALS_API FAlsLocomotionAnimationState
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS", Meta = (ClampMin = 0, ForceUnits = "cm"))
 	float CapsuleHalfHeight{0.0f};
+
+	//Variable to track how long its been since landing, used to adjust friction and prevent actions
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS")
+	float TimeSinceLanding{0.0f};
 };

@@ -538,6 +538,8 @@ void UAlsAnimationInstance::RefreshLocomotionOnGameThread()
 	                                Locomotion.Speed > Settings->General.MovingSmoothSpeedThreshold;
 	
 	LocomotionState.TargetYawAngle = Locomotion.TargetYawAngle;
+	
+	LocomotionState.TimeSinceLanding = Locomotion.TimeSinceLanding;
 
 	const auto& Proxy{GetProxyOnGameThread<FAnimInstanceProxy>()};
 	const auto& ActorTransform{Proxy.GetActorTransform()};
@@ -1473,7 +1475,7 @@ void UAlsAnimationInstance::RefreshRagdollingOnGameThread(float DeltaTime)
 
 	if (LocomotionAction != AlsLocomotionActionTags::Ragdolling)
 	{
-		RagdollingState.AdjustmentsNeeded = false;
+		RagdollingState.bAdjustmentsNeeded = false;
 		return;
 	}
 
@@ -1485,9 +1487,9 @@ void UAlsAnimationInstance::RefreshRagdollingOnGameThread(float DeltaTime)
 
 	// Smooth the target rotation and location to remove jitters
 	const auto& CharacterRagdollState = Character->GetCharacterMovement()->GetRagdollingState();
-	RagdollingState.AdjustmentsNeeded = !CharacterRagdollState.TargetLocation.IsZero() || !CharacterRagdollState.TargetRotation.IsZero();
+	RagdollingState.bAdjustmentsNeeded = !CharacterRagdollState.TargetLocation.IsZero() || !CharacterRagdollState.TargetRotation.IsZero();
 
-	if (RagdollingState.AdjustmentsNeeded)
+	if (RagdollingState.bAdjustmentsNeeded)
 	{
 		FVector PelvisLocation;
 		FRotator PelvisRotation;

@@ -337,16 +337,16 @@ void UAlsCharacterMovementComponent::BindReplicationData_Implementation()
 	BindCompressedVector(
 		RagdollingState.TargetLocation,
 		EGMC_PredictionMode::ServerAuth_Output_ClientValidated,
-		EGMC_CombineMode::AlwaysCombine,
-		EGMC_SimulationMode::Periodic_Output,
+		EGMC_CombineMode::CombineIfUnchanged,
+		EGMC_SimulationMode::PeriodicAndOnChange_Output,
 		EGMC_InterpolationFunction::Linear
 	);
 
 	BindCompressedRotator(
 		RagdollingState.TargetRotation,
 		EGMC_PredictionMode::ServerAuth_Output_ClientValidated,
-		EGMC_CombineMode::AlwaysCombine,
-		EGMC_SimulationMode::Periodic_Output,
+		EGMC_CombineMode::CombineIfUnchanged,
+		EGMC_SimulationMode::PeriodicAndOnChange_Output,
 		EGMC_InterpolationFunction::Linear
 	);
 	//end of actions
@@ -414,6 +414,173 @@ void UAlsCharacterMovementComponent::PreMovementUpdate_Implementation(float Delt
 	}
 }
 
+
+void UAlsCharacterMovementComponent::TickComponent(float DeltaTime, ELevelTick TickType,
+                                             FActorComponentTickFunction* ThisTickFunction)
+{
+	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+	
+	// Stop Ragdoll
+	if (RagdollingState.bResetMesh && IsValid(SkeletalMesh))
+	{
+		SkeletalMesh->bUpdateJointsFromAnimation = false;
+
+		UPrimitiveComponent* CollisionComponent = Cast<UPrimitiveComponent>(UpdatedComponent);
+		if (IsValid(CollisionComponent))
+		{
+			CollisionComponent->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+			CollisionComponent->SetCollisionProfileName(FName("Pawn"), false);
+			if (IsRemotelyControlledListenServerPawn())
+			{
+				SV_SwapServerState();
+				CollisionComponent->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+				CollisionComponent->SetCollisionProfileName(FName("Pawn"), false);
+				SV_SwapServerState();
+			}
+		}
+		
+		auto& FinalRagdollPose{CharacterOwner->GetAnimInstance()->SnapshotFinalRagdollPose()};
+		const auto PelvisTransform{SkeletalMesh->GetSocketTransform(UAlsConstants::PelvisBoneName())};
+
+		SkeletalMesh->SetSimulatePhysics(false);
+		SkeletalMesh->SetAllBodiesSimulatePhysics(false);
+		SkeletalMesh->ResetAllBodiesSimulatePhysics();
+
+		bool bGrounded;
+		const auto NewActorLocation{RagdollTraceGround(bGrounded)};
+
+		const auto bRagdollFacingUpward{FRotator::NormalizeAxis(RagdollingState.TargetRotation.Roll) <= 0.0f};
+
+		auto NewActorRotation{GetActorRotation_GMC()};
+		NewActorRotation.Yaw = bRagdollFacingUpward ? RagdollingState.TargetRotation.Yaw - 180.0f : RagdollingState.TargetRotation.Yaw;
+	
+		SetActorLocationAndRotation_GMC(NewActorLocation, NewActorRotation, false);
+		
+		const auto& ActorTransform{GetActorTransform()};
+	
+		SkeletalMesh->SetWorldLocationAndRotationNoPhysics(ActorTransform.TransformPositionNoScale(CharacterOwner->GetBaseTranslationOffset()),
+														ActorTransform.TransformRotation(CharacterOwner->GetBaseRotationOffset()).Rotator());
+		SkeletalMesh->AttachToComponent(CollisionComponent, FAttachmentTransformRules::KeepWorldTransform);
+		SkeletalMesh->SetRelativeLocationAndRotation(PreviousRelativeMeshLocation, PreviousRelativeMeshRotation, false, nullptr, ETeleportType::ResetPhysics);
+
+		const auto& ReferenceSkeleton{SkeletalMesh->GetSkinnedAsset()->GetRefSkeleton()};
+
+		const auto PelvisBoneIndex{ReferenceSkeleton.FindBoneIndex(UAlsConstants::PelvisBoneName())};
+		if (ALS_ENSURE(PelvisBoneIndex >= 0))
+		{
+			// We expect the pelvis bone to be the root bone or attached to it, so we can safely use the mesh transform here.
+			FinalRagdollPose.LocalTransforms[PelvisBoneIndex] = PelvisTransform.GetRelativeTransform(SkeletalMesh->GetComponentTransform());
+		}
+		
+		RagdollingState.bRagdolling = false;
+
+		OnRagdollingEnded();
+
+		if (bGrounded) 
+		{
+			PlayMontage_Blocking(CharacterOwner->GetMesh(), MontageTracker, SelectGetUpMontage(bRagdollFacingUpward), 0.0f, 1.0f);
+		} 
+		
+		RagdollingState.bResetMesh = false;
+	}
+	else if (GetMovementMode() == GetRagdollMode() && IsValid(SkeletalMesh))
+	{
+		if (RagdollingState.bFirstTick)
+		{
+			SkeletalMesh->bUpdateJointsFromAnimation = true;
+			
+			if (!SkeletalMesh->IsRunningParallelEvaluation() && SkeletalMesh->GetBoneSpaceTransforms().Num() > 0)
+			{
+				SkeletalMesh->UpdateRBJointMotors();
+			}
+
+			UPrimitiveComponent* CollisionComponent = Cast<UPrimitiveComponent>(UpdatedComponent);
+			if (IsValid(CollisionComponent))
+			{
+				CollisionComponent->SetCollisionEnabled(ECollisionEnabled::Type::NoCollision);
+				if (IsRemotelyControlledListenServerPawn())
+				{
+					SV_SwapServerState();
+					CollisionComponent->SetCollisionEnabled(ECollisionEnabled::Type::NoCollision);
+					SV_SwapServerState();							
+				}
+			}
+			
+			SkeletalMesh->SetCollisionObjectType(ECC_PhysicsBody);
+			SkeletalMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+
+			//enable full physics replication on server, but only below pelvis on clients
+
+			if (GetOwnerRole() >= ROLE_Authority)
+			{
+				SkeletalMesh->SetSimulatePhysics(true);
+			} else
+			{
+				SkeletalMesh->SetAllBodiesBelowSimulatePhysics(UAlsConstants::PelvisBoneName(),true, false);
+			}
+			
+			SkeletalMesh->SetAllBodiesBelowLinearVelocity(UAlsConstants::PelvisBoneName(), RagdollingState.LinearVelocity, true);
+			SkeletalMesh->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+
+			RagdollingState.bRagdolling = true;
+			
+			RagdollingState.bFirstTick = false;
+		}
+	}
+}
+
+void UAlsCharacterMovementComponent::PhysicsCustom_Implementation(float DeltaSeconds)
+{
+	if (GetMovementMode() == GetRagdollMode() && IsValid(SkeletalMesh))
+	{
+		const bool bIsBoneAuthority = GetNetMode() == NM_Standalone || GetOwnerRole() == ROLE_Authority;
+		
+		const FVector BoneLocation = SkeletalMesh->GetBoneLocation(UAlsConstants::PelvisBoneName());
+		const FVector BoneVelocity = SkeletalMesh->GetBoneLinearVelocity(UAlsConstants::PelvisBoneName()) * FVector(1.f, 1.f, 0.f);
+		
+		if (bIsBoneAuthority)
+		{
+			// Set our goals for clients to use.
+			SkeletalMesh->GetSocketWorldLocationAndRotation(
+				UAlsConstants::PelvisBoneName(),
+				RagdollingState.TargetLocation,
+				RagdollingState.TargetRotation
+				);
+		}
+
+		if (!RagdollingState.TargetLocation.IsZero())
+		{
+			const FVector RagdollBoneDelta = RagdollingState.TargetLocation - BoneLocation;
+		
+			if (!IsSimulatedProxy() && (!BoneVelocity.IsNearlyZero() || RagdollBoneDelta.Size() > 2.f))
+			{
+				bool bGrounded;
+				FVector NewLocation = RagdollTraceGround(bGrounded);
+				
+				// Move our character to stay with the pelvis. We do this on the client, too, to make the
+				// overall effect smooth.
+				const FVector Delta = NewLocation - UpdatedComponent->GetComponentLocation();
+		
+				if (Delta.Size() > KINDA_SMALL_NUMBER)
+				{
+					SetActorLocation_GMC(NewLocation, true);
+				}
+			}
+		}
+
+		static constexpr auto ReferenceSpeed{1000.0f};
+		static constexpr auto Stiffness{25000.0f};
+	
+		const auto SpeedAmount{UAlsMath::Clamp01(UE_REAL_TO_FLOAT(GetLinearVelocity_GMC().Size() / ReferenceSpeed))};
+	
+		SkeletalMesh->SetAllMotorsAngularDriveParams(SpeedAmount * Stiffness, 0.0f, 0.0f);
+
+		return;
+	}
+	
+	Super::PhysicsCustom_Implementation(DeltaSeconds);
+}
+
 void UAlsCharacterMovementComponent::MovementUpdate_Implementation(float DeltaSeconds)
 {
 	Super::MovementUpdate_Implementation(DeltaSeconds);
@@ -434,15 +601,11 @@ void UAlsCharacterMovementComponent::MovementUpdate_Implementation(float DeltaSe
 
 	// StartMantlingInAir();
 	// RefreshMantling();
-	RefreshRagdolling(DeltaSeconds);
 
 	ApplyDesiredJump(bDesiredJumping, DeltaSeconds);
-
-	ApplyDesiredRagdoll(bDesiredRagdolling, DeltaSeconds);
+	
 	ApplyDesiredRolling(bDesiredRolling, DeltaSeconds);
-
-	ClearLocomotionAction();
-
+	
 	RefreshLocomotionLate();
 
 	ApplyDesiredOverlayMode(DesiredOverlayMode);
@@ -468,15 +631,11 @@ void UAlsCharacterMovementComponent::MovementUpdateSimulated_Implementation(floa
 
 	// StartMantlingInAir();
 	// RefreshMantling();
-	RefreshRagdolling(DeltaSeconds);
 
 	ApplyDesiredJump_Simulated(bJustJumped, DeltaSeconds);
-
-	ApplyDesiredRagdoll(bDesiredRagdolling, DeltaSeconds);
+	
 	ApplyDesiredRolling(bDesiredRolling, DeltaSeconds);
-
-	ClearLocomotionAction();
-
+	
 	RefreshLocomotionLate();
 
 	ApplyDesiredOverlayMode(DesiredOverlayMode);
@@ -492,6 +651,45 @@ void UAlsCharacterMovementComponent::ApplyAnimRootMotionRotation(const FGMC_Root
 	RootMotionParams.Set(RootMotionTransform);
 	
 	Super::ApplyAnimRootMotionRotation(ExtractionSettings, MontageDelta, DeltaSeconds);
+}
+
+float UAlsCharacterMovementComponent::GetInputAccelerationCustom_Implementation() const
+{
+	if (GetMovementMode() == GetRagdollMode())
+	{
+		return 0.f;
+	}
+	
+	return Super::GetInputAccelerationCustom_Implementation();
+}
+
+bool UAlsCharacterMovementComponent::UpdateMovementModeDynamic_Implementation(FGMC_FloorParams& Floor, float DeltaSeconds)
+{
+	if (bDesiredRagdolling || (GetMovementMode() == GetRagdollMode()))
+	{
+		// We may need to either enable or disable ragdoll mode.
+		if (bDesiredRagdolling && (GetMovementMode() == EGMC_MovementMode::Grounded || GetMovementMode() == EGMC_MovementMode::Airborne))
+		{
+			if (!IsRagdollingAllowedToStart())
+			{
+				return true;
+			}
+			RagdollingState.LinearVelocity = GetLinearVelocity_GMC();
+			HaltMovement();
+			SetMovementMode(GetRagdollMode());
+		}
+		else if (!bDesiredRagdolling)
+		{
+			if (!IsRagdollingAllowedToStop())
+			{
+				return true;
+			}
+			SetMovementMode(EGMC_MovementMode::Airborne);
+		}
+		return true;
+	}
+	
+	return Super::UpdateMovementModeDynamic_Implementation(Floor, DeltaSeconds);
 }
 
 void UAlsCharacterMovementComponent::SetMovementSettings(UAlsMovementSettings* NewMovementSettings)
@@ -602,7 +800,7 @@ void UAlsCharacterMovementComponent::RefreshGroundedMovementSettings(float Delta
 		if (LocomotionState.TimeSinceLanding > 0.0f)
 		{
 			LocomotionState.TimeSinceLanding += DeltaSeconds;
-
+			
 			if (LocomotionState.TimeSinceLanding <= 0.5f)
 			{
 				static constexpr auto HasInputBrakingFrictionFactor{0.5f};
@@ -654,6 +852,15 @@ void UAlsCharacterMovementComponent::SetViewMode(const FGameplayTag& NewViewMode
 
 void UAlsCharacterMovementComponent::OnMovementModeChanged_Implementation(EGMC_MovementMode PreviousMovementMode)
 {
+	if (GetMovementMode() == GetRagdollMode())
+	{
+		ToggleRagdolling(true);
+	}
+	else if (PreviousMovementMode == GetRagdollMode())
+	{
+		ToggleRagdolling(false);
+	}
+	
 	//just landed
 	if (IsMovingOnGround() &&
 		PreviousMovementMode == EGMC_MovementMode::Airborne)
@@ -691,17 +898,6 @@ void UAlsCharacterMovementComponent::OnMovementModeChanged_Implementation(EGMC_M
 	}
 	
 	Super::OnMovementModeChanged_Implementation(PreviousMovementMode);
-}
-
-void UAlsCharacterMovementComponent::ApplyDesiredRagdoll(const bool bDesiredRagdoll, float DeltaSeconds)
-{
-	if (bDesiredRagdoll)
-	{
-		StartRagdolling();
-	} else
-	{
-		StopRagdolling();
-	}
 }
 
 void UAlsCharacterMovementComponent::ApplyDesiredRolling(const bool bDesiredRoll, float DeltaSeconds)
@@ -1060,15 +1256,14 @@ void UAlsCharacterMovementComponent::SetLocomotionAction(const FGameplayTag& New
 
 void UAlsCharacterMovementComponent::OnLocomotionActionChanged_Implementation(const FGameplayTag& PreviousLocomotionAction) {}
 
-void UAlsCharacterMovementComponent::ClearLocomotionAction()
+void UAlsCharacterMovementComponent::OnMontageCompleted(UAnimMontage* Montage, float Position, float PlayRate, float MontageDelta, float DeltaSeconds)
 {
-	if (!MontageTracker.HasActiveMontage())
+	if (LocomotionAction == AlsLocomotionActionTags::GettingUp || LocomotionAction == AlsLocomotionActionTags::Rolling)
 	{
-		if (LocomotionAction == AlsLocomotionActionTags::GettingUp || LocomotionAction == AlsLocomotionActionTags::Rolling)
-		{
-			SetLocomotionAction(FGameplayTag::EmptyTag);
-		}
+		SetLocomotionAction(FGameplayTag::EmptyTag);
 	}
+	
+	Super::OnMontageCompleted(Montage, Position, PlayRate, MontageDelta, DeltaSeconds);
 }
 
 FVector UAlsCharacterMovementComponent::PreProcessInputVector_Implementation(FVector InRawInputVector)
@@ -1652,7 +1847,7 @@ void UAlsCharacterMovementComponent::ApplyTurnInPlace(float DeltaTime)
 	{
 		AnimRootMotionRotationScale = 1.0f;
 		if (TurnInPlaceState.ActivationDelay > 0.0f) {
-			StopMontage(CharacterOwner->GetMesh(), MontageTracker, Settings->TurnInPlace.BlendDuration, true);
+			StopMontage(SkeletalMesh, MontageTracker, Settings->TurnInPlace.BlendDuration);
 		}
 		TurnInPlaceState.ActivationDelay = 0.0f;
 		return;
@@ -1738,7 +1933,7 @@ void UAlsCharacterMovementComponent::ApplyTurnInPlace(float DeltaTime)
 		
 		if (!HasActiveMontage(MontageTracker))
 		{
-			PlayMontage_Blocking(CharacterOwner->GetMesh(), MontageTracker, TurnInPlaceState.TurnInPlaceSettings->Montage, 0.0f, TurnInPlaceState.TurnInPlaceSettings->PlayRate);
+			PlayMontage_Blocking(SkeletalMesh, MontageTracker, TurnInPlaceState.TurnInPlaceSettings->Montage, 0.0f, TurnInPlaceState.TurnInPlaceSettings->PlayRate);
 		}
 		RefreshTargetYawAngleUsingLocomotionRotation();
 	}

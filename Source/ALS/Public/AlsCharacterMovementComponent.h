@@ -20,11 +20,7 @@ class ALS_API UAlsCharacterMovementComponent : public UGMC_OrganicMovementCmp
 	GENERATED_BODY()
 
 public:
-	// If checked, this improves the response to interaction from moving kinematic physical
-	// bodies, but may cause some issues when interacting with simulated physical bodies.
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Settings", Transient)
-	uint8 bAllowImprovedPenetrationAdjustment : 1 {true};
-
+	
 	UPROPERTY(BlueprintReadWrite, Category = "General Movement Component")
 	/// Scaling factor applied to animation root motion translation on this pawn.
 	float AnimRootMotionRotationScale{1.f};
@@ -187,11 +183,18 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
 	TObjectPtr<UInputAction> RollAction{nullptr};
 
-public:
-	FAlsPhysicsRotationDelegate OnPhysicsRotation;
-
+private:
+	//ragdolling
+	FVector PreviousRelativeMeshLocation { 0.f };
+	FRotator PreviousRelativeMeshRotation { 0.f };
+	float PreviousCollisionHalfHeight { 0.f };
+	
 public:
 	UAlsCharacterMovementComponent();
+	
+	// Called every frame
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
+							   FActorComponentTickFunction* ThisTickFunction) override;
 
 #if WITH_EDITOR
 	virtual bool CanEditChange(const FProperty* Property) const override;
@@ -199,7 +202,7 @@ public:
 
 	virtual void BeginPlay() override;
 
-	//GMC functions
+	//GMC Overrides
 protected:
 	void OnMovementModeChanged_Implementation(EGMC_MovementMode PreviousMovementMode) override;
 	
@@ -208,6 +211,8 @@ protected:
 	void SetupPlayerInputComponent_Implementation(UInputComponent* PlayerInputComponent) override;
 	
 	FVector PreProcessInputVector_Implementation(FVector InRawInputVector) override;
+	
+	virtual bool UpdateMovementModeDynamic_Implementation(FGMC_FloorParams& Floor, float DeltaSeconds) override;
 	
 	void ClampToValidValues() override;
 	
@@ -218,6 +223,12 @@ protected:
 	void MovementUpdateSimulated_Implementation(float DeltaSeconds) override;
 
 	void ApplyAnimRootMotionRotation(const FGMC_RootMotionExtractionSettings& ExtractionSettings, float MontageDelta, float DeltaSeconds) override;
+
+	virtual void OnMontageCompleted(UAnimMontage* Montage, float Position, float PlayRate, float MontageDelta, float DeltaSeconds) override;
+
+	virtual float GetInputAccelerationCustom_Implementation() const override;
+
+	virtual void PhysicsCustom_Implementation(float DeltaSeconds) override;
 private:
 	EGMC_CollisionShape InterpToSphereAndSwitchCollisionShape(EGMC_CollisionShape CurrentShape, float SphereRadius, float DeltaSeconds);
 	void MaintainMeshOffset();
@@ -410,9 +421,7 @@ public:
 protected:
 	UFUNCTION(BlueprintNativeEvent, Category = "Als Character")
 	void OnLocomotionActionChanged(const FGameplayTag& PreviousLocomotionAction);
-
-	void ClearLocomotionAction();
-
+	
 	// Input
 
 protected:
@@ -569,13 +578,16 @@ public:
 	const FAlsRagdollingState& GetRagdollingState() const;
 
 	bool IsRagdollingAllowedToStart() const;
+	
+	UFUNCTION(BlueprintCallable, Category="ALS|Character")
+	virtual EGMC_MovementMode GetRagdollMode() const { return EGMC_MovementMode::Custom1; }
+
 
 private:
 	UFUNCTION(BlueprintCallable, Category = "ALS|Character")
-	void StartRagdolling();
+	void ToggleRagdolling(bool bActive);
 
 protected:
-	void ApplyDesiredRagdoll(const bool bDesiredRagdoll, float DeltaSeconds);
 
 	UFUNCTION(BlueprintNativeEvent, Category = "Als Character")
 	void OnRagdollingStarted();

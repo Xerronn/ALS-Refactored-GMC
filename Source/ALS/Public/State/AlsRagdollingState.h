@@ -12,4 +12,22 @@ struct ALS_API FAlsRagdollingState
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS")
 	FRotator TargetRotation;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS")
+	bool bRagdolling;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS")
+	bool bResetMesh { false };
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS")
+	bool bFirstTick { false };
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS")
+	FVector LastBonePosition { 0.f };
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS")
+	double LastTime { 0 };
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS")
+	FVector LinearVelocity { 0.f };
 };
