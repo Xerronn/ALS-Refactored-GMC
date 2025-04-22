@@ -155,6 +155,9 @@ void UAlsCharacterMovementComponent::ToggleRagdolling(bool bActive)
 {
 	if (bActive)
 	{
+		RagdollingState.TargetLocation = FVector::ZeroVector;
+		RagdollingState.TargetRotation = FRotator::ZeroRotator;
+		
 		if (PreviousRelativeMeshLocation.IsZero())
 		{
 			PreviousRelativeMeshLocation = SkeletalMesh->GetRelativeLocation();
@@ -162,24 +165,40 @@ void UAlsCharacterMovementComponent::ToggleRagdolling(bool bActive)
 		}
 
 		HaltMovement();
-
+		bSmoothRemoteListenServerPawn = false;
 		SetLocomotionAction(AlsLocomotionActionTags::Ragdolling);
 		OnRagdollingStarted();
 	}
 	else
 	{
+		bool bGrounded;
+		const auto NewActorLocation{RagdollTraceGround(bGrounded)};
+
 		const auto bRagdollFacingUpward{FRotator::NormalizeAxis(RagdollingState.TargetRotation.Roll) <= 0.0f};
 
-		SetLocomotionAction(AlsLocomotionActionTags::GettingUp);
+		auto NewActorRotation{GetActorRotation_GMC()};
+		NewActorRotation.Yaw = bRagdollFacingUpward ? RagdollingState.TargetRotation.Yaw - 180.0f : RagdollingState.TargetRotation.Yaw;
+	
+		SetActorLocationAndRotation_GMC(NewActorLocation, NewActorRotation, false);
 
-		PlayMontage_Blocking(CharacterOwner->GetMesh(), MontageTracker, SelectGetUpMontage(bRagdollFacingUpward), 0.0f, 1.0f);
+		if (bGrounded)
+		{
+			SetLocomotionAction(AlsLocomotionActionTags::GettingUp);
+			PlayMontage_Blocking(CharacterOwner->GetMesh(), MontageTracker, SelectGetUpMontage(bRagdollFacingUpward), 0.0f, 1.0f);
+		}
+		else
+		{
+			SetLocomotionAction(FGameplayTag::EmptyTag);
+		}
+		
+		bSmoothRemoteListenServerPawn = true;
+		OnRagdollingEnded();
 
-		RagdollingState.TargetLocation = FVector::ZeroVector;
-		RagdollingState.TargetRotation = FRotator::ZeroRotator;
 	}
-
-	bEnablePhysicsInteraction = !bActive;
+	
 	RagdollingState.bFirstTick = bActive;
+	
+	bEnablePhysicsInteraction = !bActive;
 	RagdollingState.bResetMesh = !bActive;
 }
 
@@ -216,72 +235,6 @@ FVector UAlsCharacterMovementComponent::RagdollTraceGround(bool& bGrounded) cons
 bool UAlsCharacterMovementComponent::IsRagdollingAllowedToStop() const
 {
 	return LocomotionAction == AlsLocomotionActionTags::Ragdolling;
-}
-
-bool UAlsCharacterMovementComponent::StopRagdolling()
-{
-	if (!IsRagdollingAllowedToStop())
-	{
-		return false;
-	}
-	TObjectPtr CharacterMesh = CharacterOwner->GetMesh();
-	auto& FinalRagdollPose{CharacterOwner->GetAnimInstance()->SnapshotFinalRagdollPose()};
-	
-	const auto PelvisTransform{CharacterMesh->GetSocketTransform(UAlsConstants::PelvisBoneName())};
-	
-	// Disable mesh physics simulation and enable capsule collision.
-	CharacterMesh->bUpdateJointsFromAnimation = false;
-	
-	CharacterMesh->SetSimulatePhysics(false);
-	CharacterMesh->SetAllBodiesSimulatePhysics(false);
-	CharacterMesh->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-	CharacterMesh->SetCollisionObjectType(ECC_Pawn);
-
-	TObjectPtr CharacterCapsule = CharacterOwner->GetCapsuleComponent();
-	CharacterCapsule->SetCollisionProfileName(FName("Pawn"), false);
-	
-	bool bGrounded;
-	const auto NewActorLocation{RagdollTraceGround(bGrounded)};
-	
-	// Determine whether the ragdoll is facing upward or downward and set the actor rotation accordingly.
-	
-	const auto bRagdollFacingUpward{FRotator::NormalizeAxis(RagdollingState.TargetRotation.Roll) <= 0.0f};
-	
-	auto NewActorRotation{GetActorRotation_GMC()};
-	NewActorRotation.Yaw = bRagdollFacingUpward ? RagdollingState.TargetRotation.Yaw - 180.0f : RagdollingState.TargetRotation.Yaw;
-	
-	SetActorLocationAndRotation_GMC(NewActorLocation, NewActorRotation, false);
-	
-	const auto& ActorTransform{GetActorTransform()};
-	
-	CharacterMesh->SetWorldLocationAndRotationNoPhysics(ActorTransform.TransformPositionNoScale(CharacterOwner->GetBaseTranslationOffset()),
-													ActorTransform.TransformRotation(CharacterOwner->GetBaseRotationOffset()).Rotator());
-	
-	CharacterMesh->AttachToComponent(CharacterCapsule, FAttachmentTransformRules::KeepWorldTransform);
-	
-	// Restore the pelvis transform to the state it was in before we changed
-	// the character and mesh transforms to keep its world transform unchanged.
-	
-	const auto& ReferenceSkeleton{CharacterMesh->GetSkinnedAsset()->GetRefSkeleton()};
-	
-	const auto PelvisBoneIndex{ReferenceSkeleton.FindBoneIndex(UAlsConstants::PelvisBoneName())};
-	if (ALS_ENSURE(PelvisBoneIndex >= 0))
-	{
-		// We expect the pelvis bone to be the root bone or attached to it, so we can safely use the mesh transform here.
-		FinalRagdollPose.LocalTransforms[PelvisBoneIndex] = PelvisTransform.GetRelativeTransform(CharacterMesh->GetComponentTransform());
-	}
-	
-	
-	SetLocomotionAction(FGameplayTag::EmptyTag);
-	
-	OnRagdollingEnded();
-	
-	if (bGrounded && PlayMontage_Blocking(CharacterOwner->GetMesh(), MontageTracker, SelectGetUpMontage(bRagdollFacingUpward), 0.0f, 1.0f) > 0.0f)
-	{
-		SetLocomotionAction(AlsLocomotionActionTags::GettingUp);
-	}
-	
-	return true;
 }
 
 void UAlsCharacterMovementComponent::OnRagdollingEnded_Implementation() {}

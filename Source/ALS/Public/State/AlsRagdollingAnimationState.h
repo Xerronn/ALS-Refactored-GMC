@@ -18,8 +18,8 @@ struct ALS_API FAlsRagdollingAnimationState
 	bool bAdjustmentsNeeded{false};
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS")
-	FVector TargetLocation;
+	FVector TargetLocation{ForceInit};
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS")
-	FRotator TargetRotation;
+	FRotator TargetRotation{ForceInit};
 };

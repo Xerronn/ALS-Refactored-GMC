@@ -588,17 +588,13 @@ private:
 	void ToggleRagdolling(bool bActive);
 
 protected:
+	virtual void ApplyDesiredRagdoll(const bool bDesiredRagdoll, float DeltaSeconds);
 
 	UFUNCTION(BlueprintNativeEvent, Category = "Als Character")
 	void OnRagdollingStarted();
 
 public:
 	bool IsRagdollingAllowedToStop() const;
-	
-private:
-	UFUNCTION(BlueprintCallable, Category = "ALS|Character", Meta = (ReturnDisplayName = "Success"))
-	bool StopRagdolling();
-
 
 protected:
 	UFUNCTION(BlueprintNativeEvent, Category = "Als Character")
@@ -608,8 +604,6 @@ protected:
 	void OnRagdollingEnded();
 
 private:
-	void RefreshRagdolling(float DeltaTime);
-
 	FVector RagdollTraceGround(bool& bGrounded) const;
 };
 
