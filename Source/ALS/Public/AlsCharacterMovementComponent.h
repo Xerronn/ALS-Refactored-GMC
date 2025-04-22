@@ -223,9 +223,7 @@ protected:
 	void MovementUpdateSimulated_Implementation(float DeltaSeconds) override;
 
 	void ApplyAnimRootMotionRotation(const FGMC_RootMotionExtractionSettings& ExtractionSettings, float MontageDelta, float DeltaSeconds) override;
-
-	virtual void OnMontageCompleted(UAnimMontage* Montage, float Position, float PlayRate, float MontageDelta, float DeltaSeconds) override;
-
+	
 	virtual float GetInputAccelerationCustom_Implementation() const override;
 
 	virtual void PhysicsCustom_Implementation(float DeltaSeconds) override;
@@ -421,6 +419,8 @@ public:
 protected:
 	UFUNCTION(BlueprintNativeEvent, Category = "Als Character")
 	void OnLocomotionActionChanged(const FGameplayTag& PreviousLocomotionAction);
+
+	void ClearLocomotionAction();
 	
 	// Input
 

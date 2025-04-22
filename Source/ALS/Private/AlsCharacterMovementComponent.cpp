@@ -583,6 +583,8 @@ void UAlsCharacterMovementComponent::MovementUpdate_Implementation(float DeltaSe
 	ApplyDesiredJump(bDesiredJumping, DeltaSeconds);
 	
 	ApplyDesiredRolling(bDesiredRolling, DeltaSeconds);
+
+	ClearLocomotionAction();
 	
 	RefreshLocomotionLate();
 
@@ -615,6 +617,8 @@ void UAlsCharacterMovementComponent::MovementUpdateSimulated_Implementation(floa
 	ApplyDesiredJump_Simulated(bJustJumped, DeltaSeconds);
 	
 	ApplyDesiredRolling(bDesiredRolling, DeltaSeconds);
+
+	ClearLocomotionAction();
 	
 	RefreshLocomotionLate();
 
@@ -1236,14 +1240,16 @@ void UAlsCharacterMovementComponent::SetLocomotionAction(const FGameplayTag& New
 
 void UAlsCharacterMovementComponent::OnLocomotionActionChanged_Implementation(const FGameplayTag& PreviousLocomotionAction) {}
 
-void UAlsCharacterMovementComponent::OnMontageCompleted(UAnimMontage* Montage, float Position, float PlayRate, float MontageDelta, float DeltaSeconds)
+
+void UAlsCharacterMovementComponent::ClearLocomotionAction()
 {
-	if (LocomotionAction == AlsLocomotionActionTags::GettingUp || LocomotionAction == AlsLocomotionActionTags::Rolling)
+	if (!MontageTracker.HasActiveMontage())
 	{
-		SetLocomotionAction(FGameplayTag::EmptyTag);
+		if (LocomotionAction == AlsLocomotionActionTags::GettingUp || LocomotionAction == AlsLocomotionActionTags::Rolling)
+		{
+			SetLocomotionAction(FGameplayTag::EmptyTag);
+		}
 	}
-	
-	Super::OnMontageCompleted(Montage, Position, PlayRate, MontageDelta, DeltaSeconds);
 }
 
 FVector UAlsCharacterMovementComponent::PreProcessInputVector_Implementation(FVector InRawInputVector)

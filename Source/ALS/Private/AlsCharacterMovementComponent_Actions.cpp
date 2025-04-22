@@ -153,6 +153,7 @@ void UAlsCharacterMovementComponent::OnRagdollingStarted_Implementation() {}
 
 void UAlsCharacterMovementComponent::ToggleRagdolling(bool bActive)
 {
+	//todo: Small bug with listen servers instantly rotating ragdoll 180 degrees when toggled on, causing forward facing ragdoll instead of backward
 	if (bActive)
 	{
 		RagdollingState.TargetLocation = FVector::ZeroVector;
