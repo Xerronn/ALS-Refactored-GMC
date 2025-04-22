@@ -538,7 +538,6 @@ void UAlsCharacterMovementComponent::PhysicsCustom_Implementation(float DeltaSec
 			{
 				bool bGrounded;
 				FVector NewLocation = RagdollTraceGround(bGrounded);
-				FRotator NewRotation = {0.f, RagdollingState.TargetRotation.Yaw, 0.f};
 				
 				// Move our character to stay with the pelvis. We do this on the client, too, to make the
 				// overall effect smooth.
@@ -546,7 +545,7 @@ void UAlsCharacterMovementComponent::PhysicsCustom_Implementation(float DeltaSec
 		
 				if (Delta.Size() > KINDA_SMALL_NUMBER)
 				{
-					SetActorLocationAndRotation_GMC(NewLocation, NewRotation, true);
+					SetActorLocation_GMC(NewLocation, true);
 				}
 			}
 		}
