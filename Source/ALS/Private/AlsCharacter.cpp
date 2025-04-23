@@ -144,19 +144,9 @@ void AAlsCharacter::PossessedBy(AController* NewController)
 	RefreshMeshProperties();
 }
 
-void AAlsCharacter::OnOverlayModeChanged_Implementation(const FGameplayTag& PreviousOverlayMode) {}
-
 bool AAlsCharacter::OnCalculateCamera_Implementation(float DeltaTime, FMinimalViewInfo& ViewInfo)
 {
 	return false;
-}
-
-void AAlsCharacter::OnJump_Implementation()
-{
-	if (AnimationInstance.IsValid())
-	{
-		AnimationInstance->Jump();
-	}
 }
 
 void AAlsCharacter::RefreshMeshProperties() const

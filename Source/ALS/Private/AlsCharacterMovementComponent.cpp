@@ -1228,8 +1228,6 @@ void UAlsCharacterMovementComponent::SetOverlayMode(const FGameplayTag& NewOverl
 	OverlayMode = NewOverlayMode;
 
 	OnOverlayModeChanged(PreviousOverlayMode);
-
-	CharacterOwner->OnOverlayModeChanged(PreviousOverlayMode);
 }
 
 void UAlsCharacterMovementComponent::OnOverlayModeChanged_Implementation(const FGameplayTag& PreviousOverlayMode) {}
@@ -1444,7 +1442,6 @@ void UAlsCharacterMovementComponent::ApplyDesiredJump(bool bRequestedJump, float
 	if (bRequestedJump && CanJump())
 	{
 		AddImpulse({0., 0., JumpForce}, true);
-		CharacterOwner->OnJump();
 		bCanJump = false;
 		bJustJumped = true;
 		
@@ -1457,10 +1454,16 @@ void UAlsCharacterMovementComponent::ApplyDesiredJump(bool bRequestedJump, float
 
 void UAlsCharacterMovementComponent::ApplyDesiredJump_Simulated(bool bPerformedJump, float DeltaSeconds)
 {
-	if (bPerformedJump) CharacterOwner->OnJump();
+	if (bPerformedJump) OnJumped();
 }
 
-void UAlsCharacterMovementComponent::OnJumped_Implementation() {}
+void UAlsCharacterMovementComponent::OnJumped_Implementation()
+{
+	if (CharacterOwner->GetAnimInstance().IsValid())
+	{
+		CharacterOwner->GetAnimInstance()->Jump();
+	}
+}
 
 void UAlsCharacterMovementComponent::RefreshGroundedRotation(const float DeltaTime)
 {

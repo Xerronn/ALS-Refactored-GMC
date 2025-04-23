@@ -79,12 +79,6 @@ public:
 
 	virtual void PossessedBy(AController* NewController) override;
 
-	UFUNCTION(BlueprintNativeEvent, Category = "Als Character")
-	void OnJump();
-
-	UFUNCTION(BlueprintNativeEvent, Category = "Als Character")
-	void OnOverlayModeChanged(const FGameplayTag& PreviousOverlayMode);
-
 protected:
 	UFUNCTION(BlueprintNativeEvent, Category = "Als Character", Meta = (ReturnDisplayName = "Handled"))
 	bool OnCalculateCamera(float DeltaTime, FMinimalViewInfo& ViewInfo);
