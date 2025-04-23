@@ -457,6 +457,10 @@ void UAlsCharacterMovementComponent::TickComponent(float DeltaTime, ELevelTick T
 			const FRotator RagdollRotation = PelvisTransform.GetRelativeTransform(SkeletalMesh->GetComponentTransform()).Rotator();
 			FinalRagdollPose.LocalTransforms[PelvisBoneIndex] = {RagdollRotation, RagdollTranslation};
 		}
+
+		//maintain mesh offset
+		const FVector CurrentRelativeLocation = SkeletalMesh->GetRelativeLocation();
+		SkeletalMesh->SetRelativeLocation({CurrentRelativeLocation.X, CurrentRelativeLocation.Y, -GetRootCollisionHalfHeight(true)});
 		
 		RagdollingState.bResetMesh = false;
 	}

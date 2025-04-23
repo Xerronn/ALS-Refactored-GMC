@@ -57,7 +57,7 @@ EGMC_CollisionShape UAlsCharacterMovementComponent::InterpToSphereAndSwitchColli
 
 void UAlsCharacterMovementComponent::MaintainMeshOffset()
 {
-	if (!SkeletalMesh || LocomotionAction == AlsLocomotionActionTags::Ragdolling || LocomotionAction == AlsLocomotionActionTags::GettingUp)
+	if (!SkeletalMesh || SkeletalMesh->IsAnySimulatingPhysics())
 	{
 		return;
 	}
@@ -67,7 +67,7 @@ void UAlsCharacterMovementComponent::MaintainMeshOffset()
 
 void UAlsCharacterMovementComponent::MaintainMeshOffsetSimulated()
 {
-	if (!SkeletalMesh || LocomotionAction == AlsLocomotionActionTags::Ragdolling || LocomotionAction == AlsLocomotionActionTags::GettingUp)
+	if (!SkeletalMesh || SkeletalMesh->IsAnySimulatingPhysics())
 	{
 		return;
 	}
