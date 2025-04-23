@@ -21,4 +21,11 @@ struct ALS_API FAlsRagdollingState
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS")
 	FVector LinearVelocity{0.f};
+
+	//used to calculate speed
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS")
+	FVector LastTickLocation{ForceInit};
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS")
+	float FlailRate{0.0f};
 };

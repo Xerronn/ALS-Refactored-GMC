@@ -405,6 +405,8 @@ void UAlsCharacterMovementComponent::PreMovementUpdate_Implementation(float Delt
 {
 	Super::PreMovementUpdate_Implementation(DeltaSeconds);
 	
+	RefreshGroundedMovementSettings(DeltaSeconds);
+
 	if (GetIterationNumber() == 1)
 	{
 		bJustJumped = false;
@@ -508,10 +510,14 @@ void UAlsCharacterMovementComponent::TickComponent(float DeltaTime, ELevelTick T
 
 		static constexpr auto ReferenceSpeed{1000.0f};
 		static constexpr auto Stiffness{25000.0f};
+
+		FVector RagdollVelocity = (GetActorLocation_GMC() - RagdollingState.LastTickLocation) / DeltaTime;
+		
+		RagdollingState.FlailRate = {UAlsMath::Clamp01(UE_REAL_TO_FLOAT(RagdollVelocity.Size() / ReferenceSpeed))};
 	
-		const auto SpeedAmount{UAlsMath::Clamp01(UE_REAL_TO_FLOAT(GetLinearVelocity_GMC().Size() / ReferenceSpeed))};
-	
-		SkeletalMesh->SetAllMotorsAngularDriveParams(SpeedAmount * Stiffness, 0.0f, 0.0f);
+		SkeletalMesh->SetAllMotorsAngularDriveParams(RagdollingState.FlailRate * Stiffness, 0.0f, 0.0f);
+
+		RagdollingState.LastTickLocation = GetActorLocation_GMC();
 	}
 }
 
@@ -563,8 +569,6 @@ void UAlsCharacterMovementComponent::MovementUpdate_Implementation(float DeltaSe
 {
 	Super::MovementUpdate_Implementation(DeltaSeconds);
 	
-	RefreshGroundedMovementSettings(DeltaSeconds);
-
 	RefreshInput(DeltaSeconds);
 
 	RefreshLocomotionEarly();
@@ -597,7 +601,6 @@ void UAlsCharacterMovementComponent::MovementUpdate_Implementation(float DeltaSe
 void UAlsCharacterMovementComponent::MovementUpdateSimulated_Implementation(float DeltaSeconds)
 {
 	Super::MovementUpdate_Implementation(DeltaSeconds);
-	RefreshGroundedMovementSettings(DeltaSeconds);
 	
 	RefreshInput(DeltaSeconds);
 

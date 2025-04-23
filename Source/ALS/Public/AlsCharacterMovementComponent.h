@@ -182,12 +182,6 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
 	TObjectPtr<UInputAction> RollAction{nullptr};
-
-private:
-	//ragdolling
-	FVector PreviousRelativeMeshLocation { 0.f };
-	FRotator PreviousRelativeMeshRotation { 0.f };
-	float PreviousCollisionHalfHeight { 0.f };
 	
 public:
 	UAlsCharacterMovementComponent();

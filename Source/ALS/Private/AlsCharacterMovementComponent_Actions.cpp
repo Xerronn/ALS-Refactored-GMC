@@ -157,12 +157,7 @@ void UAlsCharacterMovementComponent::ToggleRagdolling(bool bActive)
 	{
 		RagdollingState.TargetLocation = FVector::ZeroVector;
 		RagdollingState.TargetRotation = FRotator::ZeroRotator;
-		
-		if (PreviousRelativeMeshLocation.IsZero())
-		{
-			PreviousRelativeMeshLocation = SkeletalMesh->GetRelativeLocation();
-			PreviousRelativeMeshRotation = SkeletalMesh->GetRelativeRotation();
-		}
+		RagdollingState.LastTickLocation = GetActorLocation_GMC();
 
 		HaltMovement();
 		bSmoothRemoteListenServerPawn = false;

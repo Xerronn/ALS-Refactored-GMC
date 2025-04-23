@@ -1478,24 +1478,20 @@ void UAlsAnimationInstance::RefreshRagdollingOnGameThread(float DeltaTime)
 		RagdollingState.bAdjustmentsNeeded = false;
 		return;
 	}
-
-	// Scale the flail play rate by the root speed. The faster the ragdoll moves, the faster the character will flail.
-
-	static constexpr auto ReferenceSpeed{1000.0f};
-
-	RagdollingState.FlailPlayRate = UAlsMath::Clamp01(UE_REAL_TO_FLOAT(Character->GetCharacterMovement()->GetLocomotionState().Velocity.Size() / ReferenceSpeed));
-
-	// Smooth the target rotation and location to remove jitters
+	
 	const auto& CharacterRagdollState = Character->GetCharacterMovement()->GetRagdollingState();
 	RagdollingState.bAdjustmentsNeeded = !CharacterRagdollState.TargetLocation.IsZero() || !CharacterRagdollState.TargetRotation.IsZero();
+	
+	RagdollingState.FlailPlayRate = CharacterRagdollState.FlailRate > 0.05f ? CharacterRagdollState.FlailRate : 0.0f;
 
 	if (RagdollingState.bAdjustmentsNeeded)
 	{
+		// Smooth the target rotation and location to remove jitters
 		FVector PelvisLocation;
 		FRotator PelvisRotation;
 		GetSkelMeshComponent()->GetSocketWorldLocationAndRotation(UAlsConstants::PelvisBoneName(), PelvisLocation, PelvisRotation);
 		RagdollingState.TargetLocation = FMath::VInterpTo(PelvisLocation, CharacterRagdollState.TargetLocation, DeltaTime, 5.f);
-		RagdollingState.TargetRotation= FMath::RInterpTo(PelvisRotation, CharacterRagdollState.TargetRotation, DeltaTime, 5.f);
+		RagdollingState.TargetRotation = FMath::RInterpTo(PelvisRotation, CharacterRagdollState.TargetRotation, DeltaTime, 5.f);
 	}
 
 }
