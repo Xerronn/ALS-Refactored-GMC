@@ -538,6 +538,8 @@ void UAlsCharacterMovementComponent::PhysicsCustom_Implementation(float DeltaSec
 				RagdollingState.TargetLocation,
 				RagdollingState.TargetRotation
 				);
+
+			RagdollingState.TargetRotation.Normalize();
 		}
 
 		if (!RagdollingState.TargetLocation.IsZero())
