@@ -37,7 +37,7 @@ void UAlsCameraAnimationInstance::NativeUpdateAnimation(const float DeltaTime)
 {
 	Super::NativeUpdateAnimation(DeltaTime);
 
-	if (!IsValid(Character) || !IsValid(Camera))
+	if (!IsValid(Character) || !IsValid(Camera) || !IsValid(Character->GetCharacterMovement()))
 	{
 		return;
 	}

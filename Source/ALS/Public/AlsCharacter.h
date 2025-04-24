@@ -52,7 +52,7 @@ protected:
 	FVector BaseTranslationOffset;
 
 public:
-	explicit AAlsCharacter(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
+	explicit AAlsCharacter();
 
 	static FName MeshComponentName;
 	static FName CharacterMovementComponentName;
@@ -82,6 +82,20 @@ public:
 protected:
 	UFUNCTION(BlueprintNativeEvent, Category = "Als Character", Meta = (ReturnDisplayName = "Handled"))
 	bool OnCalculateCamera(float DeltaTime, FMinimalViewInfo& ViewInfo);
+
+public:
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "Als Character")
+	void AttachOverlayObject(UStaticMesh* NewStaticMesh, USkeletalMesh* NewSkeletalMesh,
+		TSubclassOf<UAnimInstance> NewAnimClass, FName Socket, bool bUseLeftGunBone);
+
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "Als Character")
+	void ClearOverlayObject();
+	
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "Als Character")
+	void RefreshOverlayObject();
+
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "Als Character")
+	void RefreshOverlayLinkedAnimationLayer();
 
 private:
 	void RefreshMeshProperties() const;

@@ -24,9 +24,7 @@ FName AAlsCharacter::MeshComponentName(TEXT("Mesh"));
 FName AAlsCharacter::CharacterMovementComponentName(TEXT("CharacterMovement"));
 FName AAlsCharacter::CapsuleComponentName(TEXT("CapsuleComponent"));
 
-AAlsCharacter::AAlsCharacter(const FObjectInitializer& ObjectInitializer) : Super{
-	ObjectInitializer.SetDefaultSubobjectClass<UAlsCharacterMovementComponent>(CharacterMovementComponentName)
-}
+AAlsCharacter::AAlsCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
@@ -39,11 +37,10 @@ AAlsCharacter::AAlsCharacter(const FObjectInitializer& ObjectInitializer) : Supe
 		CapsuleComponent->SetShouldUpdatePhysicsVolume(true);
 		CapsuleComponent->SetCanEverAffectNavigation(false);
 		CapsuleComponent->bDynamicObstacle = true;
+		CapsuleComponent->SetCollisionProfileName(FName("Pawn"));
 		RootComponent = CapsuleComponent;
 	}
-
-	AlsCharacterMovement = CreateDefaultSubobject<UAlsCharacterMovementComponent>(CharacterMovementComponentName);
-
+	
 	Mesh = CreateOptionalDefaultSubobject<USkeletalMeshComponent>(MeshComponentName);
 	if (Mesh)
 	{
@@ -80,6 +77,8 @@ void AAlsCharacter::PostInitializeComponents()
 	
 	AnimationInstance = Cast<UAlsAnimationInstance>(GetMesh()->GetAnimInstance());
 
+	AlsCharacterMovement = FindComponentByClass<UAlsCharacterMovementComponent>();
+
 	BaseTranslationOffset = Mesh->GetRelativeLocation();
 	BaseRotationOffset = Mesh->GetRelativeRotation().Quaternion();
 
@@ -95,8 +94,8 @@ void AAlsCharacter::BeginPlay()
 
 	Super::BeginPlay();
 
-	AlsCharacterMovement->SetSkeletalMeshReference(GetMesh());
-	AlsCharacterMovement->SetUpdatedComponent(GetCapsuleComponent());
+	GetCharacterMovement()->SetSkeletalMeshReference(GetMesh());
+	GetCharacterMovement()->SetUpdatedComponent(GetCapsuleComponent());
 
 	RefreshMeshProperties();
 }
@@ -185,7 +184,7 @@ void AAlsCharacter::RefreshMeshProperties() const
 //way too lazy to go through and change them all
 const FGameplayTag AAlsCharacter::GetLocomotionMode() const
 {
-	switch (AlsCharacterMovement->GetMovementMode())
+	switch (GetCharacterMovement()->GetMovementMode())
 	{
 	case EGMC_MovementMode::Grounded:
 		return AlsLocomotionModeTags::Grounded;

@@ -532,39 +532,39 @@ private:
 	UFUNCTION(BlueprintCallable, Category = "ALS|Character")
 	void StartRolling(float PlayRate = 1.0f);
 
-// 	// Mantling
-//
-// public:
-// 	UFUNCTION(BlueprintNativeEvent, Category = "Als Character")
-// 	bool IsMantlingAllowedToStart() const;
-//
-// 	UFUNCTION(BlueprintCallable, Category = "ALS|Character", Meta = (ReturnDisplayName = "Success"))
-// 	bool StartMantlingGrounded();
-//
-// private:
-// 	bool StartMantlingInAir();
-//
-// 	bool StartMantling(const FAlsMantlingTraceSettings& TraceSettings);
-//
-// 	void StartMantlingImplementation(const FAlsMantlingParameters& Parameters);
-//
-// protected:
-// 	UFUNCTION(BlueprintNativeEvent, Category = "Als Character")
-// 	UAlsMantlingSettings* SelectMantlingSettings(EAlsMantlingType MantlingType);
-//
-// 	float CalculateMantlingStartTime(const UAlsMantlingSettings* MantlingSettings, float MantlingHeight) const;
-//
-// 	UFUNCTION(BlueprintNativeEvent, Category = "Als Character")
-// 	void OnMantlingStarted(const FAlsMantlingParameters& Parameters);
-//
-// private:
-// 	void RefreshMantling();
-//
-// 	void StopMantling(bool bStopMontage = false);
-//
-// protected:
-// 	UFUNCTION(BlueprintNativeEvent, Category = "Als Character")
-// 	void OnMantlingEnded();
+	// Mantling
+
+public:
+	UFUNCTION(BlueprintNativeEvent, Category = "Als Character")
+	bool IsMantlingAllowedToStart() const;
+
+	UFUNCTION(BlueprintCallable, Category = "ALS|Character", Meta = (ReturnDisplayName = "Success"))
+	bool StartMantlingGrounded();
+
+private:
+	bool StartMantlingInAir();
+
+	bool CheckMantle(const FAlsMantlingTraceSettings& TraceSettings);
+
+	void StartMantling(const FAlsMantlingParameters& Parameters);
+
+protected:
+	UFUNCTION(BlueprintNativeEvent, Category = "Als Character")
+	UAlsMantlingSettings* SelectMantlingSettings(EAlsMantlingType MantlingType);
+
+	float CalculateMantlingStartTime(const UAlsMantlingSettings* MantlingSettings, float MantlingHeight) const;
+
+	UFUNCTION(BlueprintNativeEvent, Category = "Als Character")
+	void OnMantlingStarted(const FAlsMantlingParameters& Parameters);
+
+private:
+	void RefreshMantling();
+
+	void StopMantling(bool bStopMontage = false);
+
+protected:
+	UFUNCTION(BlueprintNativeEvent, Category = "Als Character")
+	void OnMantlingEnded();
 
 	// Ragdolling
 

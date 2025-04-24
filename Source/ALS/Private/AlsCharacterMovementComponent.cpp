@@ -59,6 +59,7 @@ void UAlsCharacterMovementComponent::BeginPlay()
 {
 	Super::BeginPlay();
 	CharacterOwner = Cast<AAlsCharacter>(PawnOwner);
+	CharacterOwner->RefreshOverlayObject();
 	
 	if (!IsValid(CharacterOwner) || !GetGMCPawnOwner())
 	{
