@@ -25,10 +25,10 @@ struct ALS_API FAlsMantlingParameters
 	TWeakObjectPtr<UPrimitiveComponent> TargetPrimitive;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS")
-	FVector_NetQuantize100 TargetRelativeLocation{ForceInit};
+	FVector TargetLocation{ForceInit};
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS")
-	FRotator TargetRelativeRotation{ForceInit};
+	FRotator TargetRotation{ForceInit};
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS", Meta = (ForceUnits = "cm"))
 	float MantlingHeight{0.0f};

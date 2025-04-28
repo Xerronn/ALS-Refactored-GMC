@@ -587,7 +587,7 @@ void UAlsCharacterMovementComponent::MovementUpdate_Implementation(float DeltaSe
 	RefreshInAirRotation(DeltaSeconds);
 
 	// StartMantlingInAir();
-	// RefreshMantling();
+	RefreshMantling();
 
 	ApplyDesiredRagdoll(bDesiredRagdolling, DeltaSeconds);
 	ApplyDesiredJump(bDesiredJumping, DeltaSeconds);
@@ -620,10 +620,11 @@ void UAlsCharacterMovementComponent::MovementUpdateSimulated_Implementation(floa
 	RefreshInAirRotation(DeltaSeconds);
 
 	// StartMantlingInAir();
-	// RefreshMantling();
+	RefreshMantling();
 	
 	ApplyDesiredRagdoll(bDesiredRagdolling, DeltaSeconds);
 	ApplyDesiredJump_Simulated(bJustJumped, DeltaSeconds);
+	ApplyDesiredJump(bDesiredJumping, DeltaSeconds);
 	
 	ApplyDesiredRolling(bDesiredRolling, DeltaSeconds);
 
@@ -1252,7 +1253,8 @@ void UAlsCharacterMovementComponent::ClearLocomotionAction()
 {
 	if (!MontageTracker.HasActiveMontage())
 	{
-		if (LocomotionAction == AlsLocomotionActionTags::GettingUp || LocomotionAction == AlsLocomotionActionTags::Rolling)
+		if (LocomotionAction == AlsLocomotionActionTags::GettingUp || LocomotionAction == AlsLocomotionActionTags::Rolling
+			|| LocomotionAction == AlsLocomotionActionTags::MantlingEnding)
 		{
 			SetLocomotionAction(FGameplayTag::EmptyTag);
 		}
@@ -1442,11 +1444,13 @@ void UAlsCharacterMovementComponent::ApplyDesiredJump(bool bRequestedJump, float
 {
 	if (bRequestedJump && CanJump())
 	{
-		AddImpulse({0., 0., JumpForce}, true);
-		bCanJump = false;
-		bJustJumped = true;
-		
-		OnJumped();
+		StartMantlingGrounded();
+
+		// AddImpulse({0., 0., JumpForce}, true);
+		// bCanJump = false;
+		// bJustJumped = true;
+		//
+		// OnJumped();
 		
 		return;
 	}
@@ -1455,7 +1459,10 @@ void UAlsCharacterMovementComponent::ApplyDesiredJump(bool bRequestedJump, float
 
 void UAlsCharacterMovementComponent::ApplyDesiredJump_Simulated(bool bPerformedJump, float DeltaSeconds)
 {
-	if (bPerformedJump) OnJumped();
+	if (bPerformedJump)
+	{
+		OnJumped();
+	}
 }
 
 void UAlsCharacterMovementComponent::OnJumped_Implementation()

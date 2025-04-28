@@ -20,7 +20,6 @@ class ALS_API UAlsCharacterMovementComponent : public UGMC_OrganicMovementCmp
 	GENERATED_BODY()
 
 public:
-	
 	UPROPERTY(BlueprintReadWrite, Category = "General Movement Component")
 	/// Scaling factor applied to animation root motion translation on this pawn.
 	float AnimRootMotionRotationScale{1.f};
@@ -547,6 +546,9 @@ private:
 	bool CheckMantle(const FAlsMantlingTraceSettings& TraceSettings);
 
 	void StartMantling(const FAlsMantlingParameters& Parameters);
+
+	UFUNCTION(BlueprintCallable, Category="ALS|Character")
+	virtual EGMC_MovementMode GetMantlingMode() const { return EGMC_MovementMode::Custom2; }
 
 protected:
 	UFUNCTION(BlueprintNativeEvent, Category = "Als Character")
