@@ -458,11 +458,7 @@ public:
 protected:
 	virtual void ApplyDesiredJump(bool bRequestedJump, float DeltaSeconds);
 	
-	virtual void ApplyDesiredJump_Simulated(bool bRequestedJump, float DeltaSeconds);
-
-	
 	// Rotation
-
 private:
 	void RefreshGroundedRotation(float DeltaTime);
 

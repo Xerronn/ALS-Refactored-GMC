@@ -10,9 +10,7 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/NetConnection.h"
 #include "Engine/SkeletalMesh.h"
-#include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "RootMotionSources/AlsRootMotionSource_Mantling.h"
 #include "Settings/AlsCharacterSettings.h"
 #include "Utility/AlsConstants.h"
 #include "Utility/AlsDebugUtility.h"
@@ -573,8 +571,6 @@ void UAlsCharacterMovementComponent::StartMantling(const FAlsMantlingParameters&
 
 	const auto ActorFeetLocationOffset{GetActorFeetLocation() - TargetTransform.GetLocation()};
 	const auto ActorRotationOffset{TargetTransform.GetRotation().Inverse() * GetActorQuat_GMC()};
-
-	const auto RootMotionSource{MakeShared<FAlsRootMotionSource_Mantling>()};
 	
 	MantlingState.MantlingSettings = MantlingSettings;
 	MantlingState.TargetPrimitive = Parameters.TargetPrimitive;

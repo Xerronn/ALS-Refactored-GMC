@@ -623,7 +623,6 @@ void UAlsCharacterMovementComponent::MovementUpdateSimulated_Implementation(floa
 	RefreshMantling();
 	
 	ApplyDesiredRagdoll(bDesiredRagdolling, DeltaSeconds);
-	ApplyDesiredJump_Simulated(bJustJumped, DeltaSeconds);
 	ApplyDesiredJump(bDesiredJumping, DeltaSeconds);
 	
 	ApplyDesiredRolling(bDesiredRolling, DeltaSeconds);
@@ -1442,27 +1441,42 @@ void UAlsCharacterMovementComponent::RefreshLocomotionLate()
 
 void UAlsCharacterMovementComponent::ApplyDesiredJump(bool bRequestedJump, float DeltaSeconds)
 {
-	if (bRequestedJump && CanJump())
+	if (bRequestedJump)
 	{
-		StartMantlingGrounded();
+		if (LocomotionAction == AlsLocomotionActionTags::Ragdolling)
+		{
+			bDesiredRagdolling = false;
+			return;
+		}
+		
+		if (IsMovingOnGround() && StartMantlingGrounded())
+		{
+			return;
+		}
 
-		// AddImpulse({0., 0., JumpForce}, true);
-		// bCanJump = false;
-		// bJustJumped = true;
-		//
-		// OnJumped();
+		if (IsAirborne() && StartMantlingInAir())
+		{
+			return;
+		}
+		
+		if (!CanJump())
+		{
+			return;
+		}
+		
+		if (!IsSimulatedMove())
+		{
+			AddImpulse({0., 0., JumpForce}, true);
+			bCanJump = false;
+			bJustJumped = true;
+		}
+		
+		OnJumped();
 		
 		return;
 	}
+	
 	bCanJump = true;
-}
-
-void UAlsCharacterMovementComponent::ApplyDesiredJump_Simulated(bool bPerformedJump, float DeltaSeconds)
-{
-	if (bPerformedJump)
-	{
-		OnJumped();
-	}
 }
 
 void UAlsCharacterMovementComponent::OnJumped_Implementation()
