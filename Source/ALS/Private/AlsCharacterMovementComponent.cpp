@@ -585,13 +585,10 @@ void UAlsCharacterMovementComponent::MovementUpdate_Implementation(float DeltaSe
 
 	RefreshGroundedRotation(DeltaSeconds);
 	RefreshInAirRotation(DeltaSeconds);
-
-	// StartMantlingInAir();
-	RefreshMantling();
-
-	ApplyDesiredRagdoll(bDesiredRagdolling, DeltaSeconds);
-	ApplyDesiredJump(bDesiredJumping, DeltaSeconds);
 	
+	ApplyDesiredJump(bDesiredJumping, DeltaSeconds);
+	RefreshMantling();
+	ApplyDesiredRagdoll(bDesiredRagdolling, DeltaSeconds);
 	ApplyDesiredRolling(bDesiredRolling, DeltaSeconds);
 
 	ClearLocomotionAction();
@@ -618,13 +615,10 @@ void UAlsCharacterMovementComponent::MovementUpdateSimulated_Implementation(floa
 
 	RefreshGroundedRotation(DeltaSeconds);
 	RefreshInAirRotation(DeltaSeconds);
-
-	// StartMantlingInAir();
-	RefreshMantling();
 	
-	ApplyDesiredRagdoll(bDesiredRagdolling, DeltaSeconds);
 	ApplyDesiredJump(bDesiredJumping, DeltaSeconds);
-	
+	RefreshMantling();
+	ApplyDesiredRagdoll(bDesiredRagdolling, DeltaSeconds);
 	ApplyDesiredRolling(bDesiredRolling, DeltaSeconds);
 
 	ClearLocomotionAction();
@@ -1443,7 +1437,8 @@ void UAlsCharacterMovementComponent::ApplyDesiredJump(bool bRequestedJump, float
 {
 	if (bRequestedJump)
 	{
-		if (LocomotionAction == AlsLocomotionActionTags::Ragdolling)
+		//need bCanJump here to prevent holding space-bar accidentally canceling ragdoll
+		if (LocomotionAction == AlsLocomotionActionTags::Ragdolling && bCanJump)
 		{
 			bDesiredRagdolling = false;
 			return;
