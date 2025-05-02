@@ -73,12 +73,6 @@ protected:
 
 	virtual void CalcCamera(float DeltaTime, FMinimalViewInfo& ViewInfo) override;
 
-public:
-
-	virtual void Tick(float DeltaTime) override;
-
-	virtual void PossessedBy(AController* NewController) override;
-
 protected:
 	UFUNCTION(BlueprintNativeEvent, Category = "Als Character", Meta = (ReturnDisplayName = "Handled"))
 	bool OnCalculateCamera(float DeltaTime, FMinimalViewInfo& ViewInfo);
@@ -96,9 +90,6 @@ public:
 
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "Als Character")
 	void RefreshOverlayLinkedAnimationLayer();
-
-private:
-	void RefreshMeshProperties() const;
 
 public:
 	TObjectPtr<USkeletalMeshComponent> GetMesh() const;

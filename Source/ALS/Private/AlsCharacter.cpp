@@ -55,6 +55,7 @@ AAlsCharacter::AAlsCharacter()
 		Mesh->SetCollisionProfileName(MeshCollisionProfileName);
 		Mesh->SetGenerateOverlapEvents(false);
 		Mesh->SetCanEverAffectNavigation(false);
+		Mesh->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPose;
 	}
 	
 	GetMesh()->SetRelativeLocation_Direct({0.0f, 0.0f, -92.0f});
@@ -74,10 +75,12 @@ void AAlsCharacter::PostInitializeComponents()
 	// Make sure the mesh and animation blueprint are ticking after the character so they can access the most up-to-date character state.
 
 	GetMesh()->AddTickPrerequisiteActor(this);
-	
-	AnimationInstance = Cast<UAlsAnimationInstance>(GetMesh()->GetAnimInstance());
 
 	AlsCharacterMovement = FindComponentByClass<UAlsCharacterMovementComponent>();
+	AlsCharacterMovement->SetSkeletalMeshReference(GetMesh());
+	AlsCharacterMovement->SetUpdatedComponent(GetCapsuleComponent());
+	
+	AnimationInstance = Cast<UAlsAnimationInstance>(GetMesh()->GetAnimInstance());
 
 	BaseTranslationOffset = Mesh->GetRelativeLocation();
 	BaseRotationOffset = Mesh->GetRelativeRotation().Quaternion();
@@ -94,10 +97,6 @@ void AAlsCharacter::BeginPlay()
 
 	Super::BeginPlay();
 
-	GetCharacterMovement()->SetSkeletalMeshReference(GetMesh());
-	GetCharacterMovement()->SetUpdatedComponent(GetCapsuleComponent());
-
-	RefreshMeshProperties();
 }
 
 void AAlsCharacter::FaceRotation(const FRotator Rotation, const float DeltaTime)
@@ -120,64 +119,9 @@ void AAlsCharacter::CalcCamera(const float DeltaTime, FMinimalViewInfo& ViewInfo
 	}
 }
 
-void AAlsCharacter::Tick(const float DeltaTime)
-{
-	DECLARE_SCOPE_CYCLE_COUNTER(TEXT("AAlsCharacter::Tick"), STAT_AAlsCharacter_Tick, STATGROUP_Als)
-	TRACE_CPUPROFILER_EVENT_SCOPE(__FUNCTION__);
-
-	if (!AnimationInstance.IsValid())
-	{
-		Super::Tick(DeltaTime);
-		return;
-	}
-
-	RefreshMeshProperties();
-
-	Super::Tick(DeltaTime);
-}
-
-void AAlsCharacter::PossessedBy(AController* NewController)
-{
-	Super::PossessedBy(NewController);
-
-	RefreshMeshProperties();
-}
-
 bool AAlsCharacter::OnCalculateCamera_Implementation(float DeltaTime, FMinimalViewInfo& ViewInfo)
 {
 	return false;
-}
-
-void AAlsCharacter::RefreshMeshProperties() const
-{
-	const auto bStandalone{IsNetMode(NM_Standalone)};
-
-	const auto bAuthority{GetLocalRole() >= ROLE_Authority};
-	const auto bRemoteAutonomousProxy{GetRemoteRole() == ROLE_AutonomousProxy};
-
-	// Make sure that the pose is always ticked on the server when the character is controlled
-	// by a remote client, otherwise some problems may arise (such as jitter when rolling).
-
-	const auto DefaultTickOption{GetClass()->GetDefaultObject<ThisClass>()->GetMesh()->VisibilityBasedAnimTickOption};
-
-	const auto TargetTickOption{
-		!bStandalone && bAuthority && bRemoteAutonomousProxy
-			? EVisibilityBasedAnimTickOption::AlwaysTickPose
-			: EVisibilityBasedAnimTickOption::OnlyTickMontagesWhenNotRendered
-	};
-
-	// Keep the default tick option, at least if the target tick option is not required by the plugin to work properly.
-
-	GetMesh()->VisibilityBasedAnimTickOption = FMath::Min(TargetTickOption, DefaultTickOption);
-
-	const auto bMeshIsTicking{
-		GetMesh()->bRecentlyRendered || GetMesh()->VisibilityBasedAnimTickOption <= EVisibilityBasedAnimTickOption::AlwaysTickPose
-	};
-	
-	if (!bMeshIsTicking)
-	{
-		AnimationInstance->MarkPendingUpdate();
-	}
 }
 
 //map GMC MovementMode to ALS LocomotionMode for use in the anim instance
