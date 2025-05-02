@@ -584,7 +584,6 @@ void UAlsCharacterMovementComponent::StartMantling(const FAlsMantlingParameters&
 	// Clear the character movement mode and set the locomotion action to mantling.
 
 	SetMovementMode(GetMantlingMode());
-	SetMovementModeLocked(true);
 	
 	// Play the animation montage if valid.
 	PlayMontage_Blocking(SkeletalMesh, MontageTracker, MantlingSettings->Montage, StartTime, PlayRate);
@@ -758,8 +757,7 @@ void UAlsCharacterMovementComponent::StopMantling(const bool bStopMontage)
 		Montage_StopWithBlendOut(CharacterOwner->GetMesh()->GetAnimInstance(),
 			FAlphaBlendArgs(Settings->Mantling.BlendOutDuration), MontageTracker.Montage);
 	}
-
-	SetMovementModeLocked(false);
+	
 	SetMovementMode(EGMC_MovementMode::Grounded);
 	
 	OnMantlingEnded();

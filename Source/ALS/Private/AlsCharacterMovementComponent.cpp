@@ -778,32 +778,6 @@ void UAlsCharacterMovementComponent::RefreshGroundedMovementSettings(float Delta
 	}
 }
 
-void UAlsCharacterMovementComponent::SetMovementModeLocked(const bool bNewMovementModeLocked)
-{
-	bMovementModeLocked = bNewMovementModeLocked;
-}
-
-void UAlsCharacterMovementComponent::SetInputBlocked(const bool bNewInputBlocked)
-{
-	bInputBlocked = bNewInputBlocked;
-}
-
-bool UAlsCharacterMovementComponent::TryConsumePrePenetrationAdjustmentVelocity(FVector& OutVelocity)
-{
-	if (!bPrePenetrationAdjustmentVelocityValid)
-	{
-		OutVelocity = FVector::ZeroVector;
-		return false;
-	}
-
-	OutVelocity = PrePenetrationAdjustmentVelocity;
-
-	PrePenetrationAdjustmentVelocity = FVector::ZeroVector;
-	bPrePenetrationAdjustmentVelocityValid = false;
-
-	return true;
-}
-
 void UAlsCharacterMovementComponent::SetViewMode(const FGameplayTag& NewViewMode)
 {
 	ViewMode = NewViewMode;

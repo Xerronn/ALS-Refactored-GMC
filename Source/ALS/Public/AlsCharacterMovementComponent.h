@@ -59,26 +59,6 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State", Transient, Meta = (ClampMin = 0, ClampMax = 3))
 	float GaitAmount{0.0f};
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State", Transient)
-	uint8 bMovementModeLocked : 1 {false};
-
-	// Used to temporarily prohibit the player from moving the character. Also works for AI-controlled characters.
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State", Transient)
-	uint8 bInputBlocked : 1 {false};
-
-	// Valid only on locally controlled characters.
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State", Transient)
-	FRotator PreviousControlRotation{ForceInit};
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State", Transient)
-	FVector PendingPenetrationAdjustment{ForceInit};
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State", Transient)
-	FVector PrePenetrationAdjustmentVelocity{ForceInit};
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State", Transient)
-	uint8 bPrePenetrationAdjustmentVelocityValid : 1 {false};
-
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings|Als Character")
 	TObjectPtr<UAlsCharacterSettings> Settings;
 
@@ -274,13 +254,6 @@ public:
 
 private:
 	void RefreshGroundedMovementSettings(float DeltaSeconds);
-
-public:
-	void SetMovementModeLocked(bool bNewMovementModeLocked);
-
-	void SetInputBlocked(bool bNewInputBlocked);
-
-	bool TryConsumePrePenetrationAdjustmentVelocity(FVector& OutVelocity);
 	
 	// View Mode
 
@@ -349,6 +322,7 @@ protected:
 	void SetStance(const FGameplayTag& NewStance);
 
 	void Stand(EGMC_CollisionShape CurrentCollisionShape, float DeltaSeconds);
+	
 	void Crouch(EGMC_CollisionShape CurrentCollisionShape, float DeltaSeconds);
 
 	UFUNCTION(BlueprintNativeEvent, Category = "Als Character")
@@ -389,6 +363,7 @@ private:
 
 public:
 	const FGameplayTag& GetOverlayMode() const;
+	
 	const FGameplayTag& GetDesiredOverlayMode() const;
 
 	UFUNCTION(BlueprintCallable, Category = "ALS|Character", Meta = (AutoCreateRefTerm = "NewDesiredOverlayMode"))
