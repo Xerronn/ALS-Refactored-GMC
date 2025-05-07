@@ -531,7 +531,7 @@ protected:
 	void OnMantlingStarted(const FAlsMantlingParameters& Parameters);
 
 private:
-	void RefreshMantling();
+	void RefreshMantling(float DeltaTime);
 
 	void StopMantling(bool bStopMontage = false);
 

@@ -11,6 +11,9 @@ struct ALS_API FAlsMantlingState
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS")
 	float MontageStartTime{0.0f};
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS")
+	float MantlingTimer{0.0f};
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS")
 	TObjectPtr<UAlsMantlingSettings> MantlingSettings;

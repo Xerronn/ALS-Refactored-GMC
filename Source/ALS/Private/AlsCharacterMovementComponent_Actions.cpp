@@ -661,14 +661,19 @@ float UAlsCharacterMovementComponent::CalculateMantlingStartTime(const UAlsMantl
 
 void UAlsCharacterMovementComponent::OnMantlingStarted_Implementation(const FAlsMantlingParameters& Parameters) {}
 
-void UAlsCharacterMovementComponent::RefreshMantling()
+void UAlsCharacterMovementComponent::RefreshMantling(float DeltaTime)
 {
 	if (LocomotionAction != AlsLocomotionActionTags::Mantling)
 	{
 		return;
 	}
 
-	const auto* Montage{MantlingState.MantlingSettings->Montage.Get()};
+	MantlingState.MantlingTimer += DeltaTime;
+
+	auto* Montage{MantlingState.MantlingSettings->Montage.Get()};
+	const auto MontageTime{MantlingState.MontageStartTime + MantlingState.MantlingTimer * Montage->RateScale};
+	
+	SetMontagePosition(SkeletalMesh, MontageTracker, FMath::Max(0.0f, MontageTime - DeltaTime));
 	
 	auto TargetTransform{FTransform{MantlingState.TargetRotation, MantlingState.TargetLocation}};
 
@@ -682,11 +687,11 @@ void UAlsCharacterMovementComponent::RefreshMantling()
 	const auto& MontageBlendIn{Montage->BlendIn};
 	if (MontageBlendIn.GetBlendTime() > 0.0f)
 	{
-		BlendInAmount = FAlphaBlend::AlphaToBlendOption(MontageTracker.MontagePosition / MontageBlendIn.GetBlendTime(),
+		BlendInAmount = FAlphaBlend::AlphaToBlendOption(MantlingState.MantlingTimer / MontageBlendIn.GetBlendTime(),
 		                                                MontageBlendIn.GetBlendOption(), MontageBlendIn.GetCustomCurve());
 	}
 
-	const auto CurrentAnimationLocation{UAlsMontageUtility::ExtractRootTransformFromMontage(Montage, MontageTracker.MontagePosition).GetLocation()};
+	const auto CurrentAnimationLocation{UAlsMontageUtility::ExtractRootTransformFromMontage(Montage, MontageTime).GetLocation()};
 
 	// The target animation location is expected to be non-zero, so it's safe to divide by it here.
 
@@ -709,14 +714,13 @@ void UAlsCharacterMovementComponent::RefreshMantling()
 
 		if (IsValid(MantlingState.MantlingSettings->HorizontalCorrectionCurve))
 		{
-			HorizontalCorrectionAmount = MantlingState.MantlingSettings->HorizontalCorrectionCurve->GetFloatValue(MontageTracker.MontagePosition);
+			HorizontalCorrectionAmount = MantlingState.MantlingSettings->HorizontalCorrectionCurve->GetFloatValue(MontageTime);
 		}
 
 		if (IsValid(MantlingState.MantlingSettings->VerticalCorrectionCurve))
 		{
-			VerticalCorrectionAmount = MantlingState.MantlingSettings->VerticalCorrectionCurve->GetFloatValue(MontageTracker.MontagePosition);
+			VerticalCorrectionAmount = MantlingState.MantlingSettings->VerticalCorrectionCurve->GetFloatValue(MontageTime);
 		}
-
 		
 		FVector LocationOffset{
 			FMath::Lerp(MantlingState.ActorFeetLocationOffset.X, TargetAnimationLocationOffset.X, HorizontalCorrectionAmount),
@@ -750,6 +754,8 @@ void UAlsCharacterMovementComponent::RefreshMantling()
 
 void UAlsCharacterMovementComponent::StopMantling(const bool bStopMontage)
 {
+	MantlingState.MantlingTimer = 0.0f;
+	
 	SetLocomotionAction(AlsLocomotionActionTags::MantlingEnding);
 	
 	if (bStopMontage && MontageTracker.Montage != nullptr)

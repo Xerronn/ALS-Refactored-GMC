@@ -210,6 +210,14 @@ void UAlsCharacterMovementComponent::BindReplicationData_Implementation()
 		EGMC_SimulationMode::None,
 		EGMC_InterpolationFunction::Linear
 	);
+
+	BindCompressedSinglePrecisionFloat(
+		MantlingState.MantlingTimer,
+		EGMC_PredictionMode::ServerAuth_Output_ClientValidated,
+		EGMC_CombineMode::AlwaysCombine,
+		EGMC_SimulationMode::None,
+		EGMC_InterpolationFunction::Linear
+	);
 	//end of limiters
 
 	//current state
@@ -587,7 +595,7 @@ void UAlsCharacterMovementComponent::MovementUpdate_Implementation(float DeltaSe
 	RefreshInAirRotation(DeltaSeconds);
 	
 	ApplyDesiredJump(bDesiredJumping, DeltaSeconds);
-	RefreshMantling();
+	RefreshMantling(DeltaSeconds);
 	ApplyDesiredRagdoll(bDesiredRagdolling, DeltaSeconds);
 	ApplyDesiredRolling(bDesiredRolling, DeltaSeconds);
 
@@ -617,7 +625,7 @@ void UAlsCharacterMovementComponent::MovementUpdateSimulated_Implementation(floa
 	RefreshInAirRotation(DeltaSeconds);
 	
 	ApplyDesiredJump(bDesiredJumping, DeltaSeconds);
-	RefreshMantling();
+	RefreshMantling(DeltaSeconds);
 	ApplyDesiredRagdoll(bDesiredRagdolling, DeltaSeconds);
 	ApplyDesiredRolling(bDesiredRolling, DeltaSeconds);
 
