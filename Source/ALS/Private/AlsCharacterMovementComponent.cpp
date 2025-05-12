@@ -196,6 +196,14 @@ void UAlsCharacterMovementComponent::BindReplicationData_Implementation()
 		EGMC_InterpolationFunction::NearestNeighbour
 	);
 
+	BindBool(
+		bChangingStance,
+		EGMC_PredictionMode::ServerAuth_Output_ClientValidated,
+		EGMC_CombineMode::AlwaysCombine,
+		EGMC_SimulationMode::None,
+		EGMC_InterpolationFunction::NearestNeighbour
+	);
+
 	BindGameplayTag(
 		MaxAllowedGait,
 		EGMC_PredictionMode::ServerAuth_Output_ClientValidated,
@@ -1044,16 +1052,22 @@ void UAlsCharacterMovementComponent::ApplyDesiredStance(const FGameplayTag& Stan
 {
 	EGMC_CollisionShape CurrentCollisionShape = GetRootCollisionShape();
 
+	if (DesiredStance != Stance)
+	{
+		bChangingStance = true;
+	}
+
 	if (!LocomotionAction.IsValid())
 	{
-		if (IsMovingOnGround())
+		if (bChangingStance && IsMovingOnGround())
 		{
-			if (DesiredStance == AlsStanceTags::Standing)
+			bool bCanStand = CanStand();
+			if (DesiredStance == AlsStanceTags::Standing && bCanStand)
 			{
 				Stand(CurrentCollisionShape, DeltaSeconds);
 				SetStance(AlsStanceTags::Standing);
 			}
-			else if (DesiredStance == AlsStanceTags::Crouching)
+			else if (DesiredStance == AlsStanceTags::Crouching || !bCanStand)
 			{
 				Crouch(CurrentCollisionShape, DeltaSeconds);
 				SetStance(AlsStanceTags::Crouching);
@@ -1075,6 +1089,23 @@ bool UAlsCharacterMovementComponent::CanCrouch() const
 	// TODO Wait for https://github.com/EpicGames/UnrealEngine/pull/9558 to be merged into the engine.
 	// TODO add can crouch logic
 	return true;
+}
+
+bool UAlsCharacterMovementComponent::CanStand() const
+{
+	FCollisionQueryParams QueryParams{__FUNCTION__, false, CharacterOwner};
+	FCollisionResponseParams ResponseParams;
+	
+	FVector StartingLocation = GetActorFeetLocation() + FVector(0.f, 0.f, CrouchedHalfHeight * 2);
+	FVector EndingLocation = GetActorFeetLocation() + FVector(0.f, 0.f, StandingHalfHeight * 2);
+
+	bool bHit;
+	FHitResult Hit;
+	bHit = GetWorld()->LineTraceSingleByChannel(Hit, StartingLocation,
+											EndingLocation, ECC_WorldStatic,
+												QueryParams, ResponseParams);
+	
+	return !bHit;
 }
 
 void UAlsCharacterMovementComponent::SetStance(const FGameplayTag& NewStance)

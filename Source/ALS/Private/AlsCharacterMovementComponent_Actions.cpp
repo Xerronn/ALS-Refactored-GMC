@@ -254,8 +254,10 @@ void UAlsCharacterMovementComponent::StartRolling(const float PlayRate)
 	
 	if (Settings->Rolling.bCrouchOnStart)
 	{
+		SetDesiredStance(AlsStanceTags::Crouching);
 		Crouch(GetRootCollisionShape(), 100000.f);
-
+		bChangingStance = false;
+		SetStance(AlsStanceTags::Crouching);
 		IsSimulatedPawn() ? MaintainMeshOffsetSimulated() : MaintainMeshOffset();
 	}
 }

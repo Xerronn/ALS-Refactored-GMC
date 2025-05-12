@@ -308,12 +308,14 @@ private:
 	void SetDesiredStance(const FGameplayTag& NewDesiredStance);
 
 protected:
-	virtual void ApplyDesiredStance(const FGameplayTag& StanceToApply, float DeltaSeconds);
+	void ApplyDesiredStance(const FGameplayTag& StanceToApply, float DeltaSeconds);
 
 	// Stance
 
 public:
-	virtual bool CanCrouch() const;
+	bool CanCrouch() const;
+
+	bool CanStand() const;
 
 public:
 	const FGameplayTag& GetStance() const;
