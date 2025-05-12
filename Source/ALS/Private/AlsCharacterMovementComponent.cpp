@@ -108,7 +108,7 @@ void UAlsCharacterMovementComponent::BindReplicationData_Implementation()
 		bDesiredJumping,
 		EGMC_PredictionMode::ClientAuth_Input,
 		EGMC_CombineMode::CombineIfUnchanged,
-		EGMC_SimulationMode::Periodic_Output,
+		EGMC_SimulationMode::PeriodicAndOnChange_Output,
 		EGMC_InterpolationFunction::NearestNeighbour
 	);
 
@@ -116,7 +116,7 @@ void UAlsCharacterMovementComponent::BindReplicationData_Implementation()
 		bDesiredAiming,
 		EGMC_PredictionMode::ClientAuth_Input,
 		EGMC_CombineMode::CombineIfUnchanged,
-		EGMC_SimulationMode::Periodic_Output,
+		EGMC_SimulationMode::PeriodicAndOnChange_Output,
 		EGMC_InterpolationFunction::NearestNeighbour
 	);
 	
@@ -140,7 +140,7 @@ void UAlsCharacterMovementComponent::BindReplicationData_Implementation()
 		DesiredStance,
 		EGMC_PredictionMode::ClientAuth_Input,
 		EGMC_CombineMode::CombineIfUnchanged,
-		EGMC_SimulationMode::Periodic_Output,
+		EGMC_SimulationMode::PeriodicAndOnChange_Output,
 		EGMC_InterpolationFunction::NearestNeighbour
 	);
 
@@ -148,7 +148,7 @@ void UAlsCharacterMovementComponent::BindReplicationData_Implementation()
 		DesiredGait,
 		EGMC_PredictionMode::ClientAuth_Input,
 		EGMC_CombineMode::CombineIfUnchanged,
-		EGMC_SimulationMode::Periodic_Output,
+		EGMC_SimulationMode::PeriodicAndOnChange_Output,
 		EGMC_InterpolationFunction::NearestNeighbour
 	);
 
@@ -156,7 +156,7 @@ void UAlsCharacterMovementComponent::BindReplicationData_Implementation()
 		DesiredRotationMode,
 		EGMC_PredictionMode::ClientAuth_Input,
 		EGMC_CombineMode::CombineIfUnchanged,
-		EGMC_SimulationMode::Periodic_Output,
+		EGMC_SimulationMode::PeriodicAndOnChange_Output,
 		EGMC_InterpolationFunction::NearestNeighbour
 	);
 
@@ -164,7 +164,7 @@ void UAlsCharacterMovementComponent::BindReplicationData_Implementation()
 		ViewMode,
 		EGMC_PredictionMode::ClientAuth_Input,
 		EGMC_CombineMode::CombineIfUnchanged,
-		EGMC_SimulationMode::Periodic_Output,
+		EGMC_SimulationMode::PeriodicAndOnChange_Output,
 		EGMC_InterpolationFunction::NearestNeighbour
 	);
 
@@ -172,11 +172,13 @@ void UAlsCharacterMovementComponent::BindReplicationData_Implementation()
 		DesiredOverlayMode,
 		EGMC_PredictionMode::ClientAuth_Input,
 		EGMC_CombineMode::CombineIfUnchanged,
-		EGMC_SimulationMode::Periodic_Output,
+		EGMC_SimulationMode::PeriodicAndOnChange_Output,
 		EGMC_InterpolationFunction::NearestNeighbour
 	);
 	
 	//end of input
+
+	//limiters
 
 	BindBool(
 		bJustJumped,
@@ -186,7 +188,6 @@ void UAlsCharacterMovementComponent::BindReplicationData_Implementation()
 		EGMC_InterpolationFunction::NearestNeighbour
 	);
 
-	//limiters
 	BindBool(
 		bCanJump,
 		EGMC_PredictionMode::ServerAuth_Output_ClientValidated,
@@ -205,14 +206,6 @@ void UAlsCharacterMovementComponent::BindReplicationData_Implementation()
 	
 	BindCompressedSinglePrecisionFloat(
 		MaxDesiredSpeed,
-		EGMC_PredictionMode::ServerAuth_Output_ClientValidated,
-		EGMC_CombineMode::AlwaysCombine,
-		EGMC_SimulationMode::None,
-		EGMC_InterpolationFunction::Linear
-	);
-
-	BindCompressedSinglePrecisionFloat(
-		MantlingState.MantlingTimer,
 		EGMC_PredictionMode::ServerAuth_Output_ClientValidated,
 		EGMC_CombineMode::AlwaysCombine,
 		EGMC_SimulationMode::None,
@@ -340,9 +333,7 @@ void UAlsCharacterMovementComponent::BindReplicationData_Implementation()
 		EGMC_SimulationMode::None,
 		EGMC_InterpolationFunction::Linear
 	);
-	//end of state
 
-	//start of actions
 	BindCompressedVector(
 		RagdollingState.TargetLocation,
 		EGMC_PredictionMode::ServerAuth_Output_ClientValidated,
@@ -358,7 +349,47 @@ void UAlsCharacterMovementComponent::BindReplicationData_Implementation()
 		EGMC_SimulationMode::PeriodicAndOnChange_Output,
 		EGMC_InterpolationFunction::Linear
 	);
-	//end of actions
+
+	BindCompressedSinglePrecisionFloat(
+		MantlingState.MantlingTimer,
+		EGMC_PredictionMode::ServerAuth_Output_ClientValidated,
+		EGMC_CombineMode::AlwaysCombine,
+		EGMC_SimulationMode::None,
+		EGMC_InterpolationFunction::Linear
+	);
+
+	BindHalfByte(
+		MantlingState.MantlingType,
+		EGMC_PredictionMode::ServerAuth_Output_ClientValidated,
+		EGMC_CombineMode::AlwaysCombine,
+		EGMC_SimulationMode::None,
+		EGMC_InterpolationFunction::Linear
+	);
+
+	BindCompressedVector(
+		MantlingState.TargetLocation,
+		EGMC_PredictionMode::ServerAuth_Output_ClientValidated,
+		EGMC_CombineMode::AlwaysCombine,
+		EGMC_SimulationMode::None,
+		EGMC_InterpolationFunction::Linear
+	);
+
+	BindCompressedVector(
+		MantlingState.TargetAnimationLocation,
+		EGMC_PredictionMode::ServerAuth_Output_ClientValidated,
+		EGMC_CombineMode::AlwaysCombine,
+		EGMC_SimulationMode::None,
+		EGMC_InterpolationFunction::Linear
+	);
+
+	BindCompressedRotator(
+		MantlingState.TargetRotation,
+		EGMC_PredictionMode::ServerAuth_Output_ClientValidated,
+		EGMC_CombineMode::AlwaysCombine,
+		EGMC_SimulationMode::None,
+		EGMC_InterpolationFunction::Linear
+	);
+	//end of state
 	
 	//start of velocity blend
 	BindBool(
@@ -1426,12 +1457,12 @@ void UAlsCharacterMovementComponent::ApplyDesiredJump(bool bRequestedJump, float
 			return;
 		}
 		
-		if (IsMovingOnGround() && StartMantlingGrounded())
+		if (IsMovingOnGround() && bCanJump && StartMantlingGrounded())
 		{
 			return;
 		}
 
-		if (IsAirborne() && StartMantlingInAir())
+		if (IsAirborne() && bCanJump && StartMantlingInAir())
 		{
 			return;
 		}
@@ -1446,10 +1477,8 @@ void UAlsCharacterMovementComponent::ApplyDesiredJump(bool bRequestedJump, float
 			AddImpulse({0., 0., JumpForce}, true);
 			bCanJump = false;
 			bJustJumped = true;
+			OnJumped();
 		}
-		
-		OnJumped();
-		
 		return;
 	}
 	

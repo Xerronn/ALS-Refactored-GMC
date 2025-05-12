@@ -14,9 +14,10 @@ struct ALS_API FAlsMantlingState
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS")
 	float MantlingTimer{0.0f};
-	
+
+	//EAlsMantlingType enum as uint8 for binding
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS")
-	TObjectPtr<UAlsMantlingSettings> MantlingSettings;
+	uint8 MantlingType{0};
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS")
 	TWeakObjectPtr<UPrimitiveComponent> TargetPrimitive;

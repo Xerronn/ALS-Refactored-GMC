@@ -572,7 +572,7 @@ void UAlsCharacterMovementComponent::StartMantling(const FAlsMantlingParameters&
 	const auto ActorFeetLocationOffset{GetActorFeetLocation() - TargetTransform.GetLocation()};
 	const auto ActorRotationOffset{TargetTransform.GetRotation().Inverse() * GetActorQuat_GMC()};
 	
-	MantlingState.MantlingSettings = MantlingSettings;
+	MantlingState.MantlingType = static_cast<uint8>(Parameters.MantlingType);
 	MantlingState.TargetPrimitive = Parameters.TargetPrimitive;
 	MantlingState.TargetLocation = Parameters.TargetLocation;
 	MantlingState.TargetRotation = Parameters.TargetRotation;
@@ -670,7 +670,9 @@ void UAlsCharacterMovementComponent::RefreshMantling(float DeltaTime)
 
 	MantlingState.MantlingTimer += DeltaTime;
 
-	auto* Montage{MantlingState.MantlingSettings->Montage.Get()};
+	auto* MantlingSettings{SelectMantlingSettings(static_cast<EAlsMantlingType>(MantlingState.MantlingType))};
+
+	auto* Montage{MantlingSettings->Montage.Get()};
 	const auto MontageTime{MantlingState.MontageStartTime + MantlingState.MantlingTimer * Montage->RateScale};
 	
 	SetMontagePosition(SkeletalMesh, MontageTracker, FMath::Max(0.0f, MontageTime - DeltaTime));
@@ -712,14 +714,14 @@ void UAlsCharacterMovementComponent::RefreshMantling(float DeltaTime)
 		auto HorizontalCorrectionAmount{1.0f};
 		auto VerticalCorrectionAmount{1.0f};
 
-		if (IsValid(MantlingState.MantlingSettings->HorizontalCorrectionCurve))
+		if (IsValid(MantlingSettings->HorizontalCorrectionCurve))
 		{
-			HorizontalCorrectionAmount = MantlingState.MantlingSettings->HorizontalCorrectionCurve->GetFloatValue(MontageTime);
+			HorizontalCorrectionAmount = MantlingSettings->HorizontalCorrectionCurve->GetFloatValue(MontageTime);
 		}
 
-		if (IsValid(MantlingState.MantlingSettings->VerticalCorrectionCurve))
+		if (IsValid(MantlingSettings->VerticalCorrectionCurve))
 		{
-			VerticalCorrectionAmount = MantlingState.MantlingSettings->VerticalCorrectionCurve->GetFloatValue(MontageTime);
+			VerticalCorrectionAmount = MantlingSettings->VerticalCorrectionCurve->GetFloatValue(MontageTime);
 		}
 		
 		FVector LocationOffset{
