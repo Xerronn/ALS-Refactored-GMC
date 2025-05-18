@@ -51,9 +51,6 @@ struct ALS_API FAlsLocomotionState
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS")
 	FRotator Rotation{ForceInit};
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS", Meta = (ClampMin = -180, ClampMax = 180, ForceUnits = "deg"))
-	float PreviousYawAngle{0.0f};
-
 	// Specifies the maximum angle by which the actor's rotation can differ from the view rotation when aiming.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS", Meta = (ClampMin = 0, ClampMax = 180, ForceUnits = "deg"))
 	float AimingYawAngleLimit{180.0f};
@@ -62,7 +59,7 @@ struct ALS_API FAlsLocomotionState
 	uint8 bAimingLimitAppliedThisFrame : 1 {false};
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS")
-	uint8 bResetAimingLimit : 1 {true};
+	bool bResetAimingLimit{true};
 
 	//ported logic from AnimationInstance for GMC conversion
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS")

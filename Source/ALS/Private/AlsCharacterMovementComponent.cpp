@@ -82,7 +82,6 @@ void UAlsCharacterMovementComponent::BeginPlay()
 
 	LocomotionState.Location = ActorTransform.GetLocation();
 	LocomotionState.Rotation = GetActorRotation_GMC();
-	LocomotionState.PreviousYawAngle = LocomotionState.Rotation.Yaw;
 
 	RefreshTargetYawAngleUsingLocomotionRotation();
 
@@ -262,17 +261,9 @@ void UAlsCharacterMovementComponent::BindReplicationData_Implementation()
 		EGMC_InterpolationFunction::NearestNeighbour
 	);
 	
-	BindCompressedRotator(
-		ViewState.Rotation,
-		EGMC_PredictionMode::ServerAuth_Output_ClientValidated,
-		EGMC_CombineMode::AlwaysCombine,
-		EGMC_SimulationMode::None,
-		EGMC_InterpolationFunction::Linear
-	);
-
-	BindCompressedRotator(
-		LocomotionState.Rotation,
-		EGMC_PredictionMode::ServerAuth_Output_ClientValidated,
+	BindCompressedSinglePrecisionFloat(
+		ViewState.PreviousYawAngle,
+		EGMC_PredictionMode::ClientAuth_Input,
 		EGMC_CombineMode::AlwaysCombine,
 		EGMC_SimulationMode::None,
 		EGMC_InterpolationFunction::Linear
@@ -288,7 +279,7 @@ void UAlsCharacterMovementComponent::BindReplicationData_Implementation()
 
 	BindCompressedSinglePrecisionFloat(
 		LocomotionState.TargetYawAngle,
-		EGMC_PredictionMode::ServerAuth_Output_ClientValidated,
+		EGMC_PredictionMode::ClientAuth_Input,
 		EGMC_CombineMode::AlwaysCombine,
 		EGMC_SimulationMode::None,
 		EGMC_InterpolationFunction::Linear
@@ -296,7 +287,15 @@ void UAlsCharacterMovementComponent::BindReplicationData_Implementation()
 	
 	BindCompressedSinglePrecisionFloat(
 		LocomotionState.SmoothTargetYawAngle,
-		EGMC_PredictionMode::ServerAuth_Output_ClientValidated,
+		EGMC_PredictionMode::ClientAuth_Input,
+		EGMC_CombineMode::AlwaysCombine,
+		EGMC_SimulationMode::None,
+		EGMC_InterpolationFunction::Linear
+	);
+
+	BindCompressedSinglePrecisionFloat(
+		LocomotionState.ViewRelativeTargetYawAngle,
+		EGMC_PredictionMode::ClientAuth_Input,
 		EGMC_CombineMode::AlwaysCombine,
 		EGMC_SimulationMode::None,
 		EGMC_InterpolationFunction::Linear
@@ -312,6 +311,22 @@ void UAlsCharacterMovementComponent::BindReplicationData_Implementation()
 	
 	BindCompressedSinglePrecisionFloat(
 		RotateInPlaceState.PlayRate,
+		EGMC_PredictionMode::ServerAuth_Output_ClientValidated,
+		EGMC_CombineMode::AlwaysCombine,
+		EGMC_SimulationMode::None,
+		EGMC_InterpolationFunction::Linear
+	);
+
+	BindBool(
+		RotateInPlaceState.bRotatingLeft,
+		EGMC_PredictionMode::ServerAuth_Output_ClientValidated,
+		EGMC_CombineMode::AlwaysCombine,
+		EGMC_SimulationMode::None,
+		EGMC_InterpolationFunction::Linear
+	);
+
+	BindBool(
+		RotateInPlaceState.bRotatingRight,
 		EGMC_PredictionMode::ServerAuth_Output_ClientValidated,
 		EGMC_CombineMode::AlwaysCombine,
 		EGMC_SimulationMode::None,
@@ -618,7 +633,7 @@ void UAlsCharacterMovementComponent::PhysicsCustom_Implementation(float DeltaSec
 void UAlsCharacterMovementComponent::MovementUpdate_Implementation(float DeltaSeconds)
 {
 	Super::MovementUpdate_Implementation(DeltaSeconds);
-	
+
 	RefreshInput(DeltaSeconds);
 
 	RefreshLocomotionEarly();
@@ -1324,19 +1339,12 @@ void UAlsCharacterMovementComponent::RefreshInput(const float DeltaTime)
 	}
 }
 
-void UAlsCharacterMovementComponent::RefreshView(const float DeltaTime)
+void UAlsCharacterMovementComponent::RefreshLocomotionEarly()
 {
-	ViewState.PreviousYawAngle = ViewState.Rotation.Yaw;
+	RefreshLocomotionLocationAndRotation();
 
-	ViewState.Rotation = GetControllerRotation_GMC();
-
-	// Set the yaw speed by comparing the current and previous view yaw angle, divided by
-	// delta seconds. This represents the speed the camera is rotating from left to right.
-
-	if (DeltaTime > UE_SMALL_NUMBER)
-	{
-		ViewState.YawSpeed = FMath::Abs(ViewState.Rotation.Yaw - ViewState.PreviousYawAngle) / DeltaTime;
-	}
+	LocomotionState.PreviousVelocity = LocomotionState.Velocity;
+	LocomotionState.bAimingLimitAppliedThisFrame = false;
 }
 
 void UAlsCharacterMovementComponent::RefreshLocomotionLocationAndRotation()
@@ -1347,13 +1355,19 @@ void UAlsCharacterMovementComponent::RefreshLocomotionLocationAndRotation()
 	LocomotionState.Rotation = GetBasedActorRotation();
 }
 
-void UAlsCharacterMovementComponent::RefreshLocomotionEarly()
+void UAlsCharacterMovementComponent::RefreshView(const float DeltaTime)
 {
-	RefreshLocomotionLocationAndRotation();
+	ViewState.Rotation = GetControllerRotation_GMC();
 
-	LocomotionState.PreviousVelocity = LocomotionState.Velocity;
-	LocomotionState.PreviousYawAngle = LocomotionState.Rotation.Yaw;
-	LocomotionState.bAimingLimitAppliedThisFrame = false;
+	// Set the yaw speed by comparing the current and previous view yaw angle, divided by
+	// delta seconds. This represents the speed the camera is rotating from left to right.
+
+	if (DeltaTime > UE_SMALL_NUMBER)
+	{
+		ViewState.YawSpeed = FMath::Abs(ViewState.Rotation.Yaw - ViewState.PreviousYawAngle) / DeltaTime;
+	}
+	
+	ViewState.PreviousYawAngle = ViewState.Rotation.Yaw;
 }
 
 void UAlsCharacterMovementComponent::RefreshLocomotion(const float DeltaTime)
@@ -1530,13 +1544,12 @@ void UAlsCharacterMovementComponent::RefreshGroundedRotation(const float DeltaTi
 	{
 		return;
 	}
-
-	//todo: make this work only when rolling/mantling. ignore the root motion when turning in place basically
-	// if (bHasRootMotion)
-	// {
-	// 	RefreshTargetYawAngleUsingLocomotionRotation();
-	// 	return;
-	// }
+	
+	if (bHasRootMotion && LocomotionAction.IsValid())
+	{
+		RefreshTargetYawAngleUsingLocomotionRotation();
+		return;
+	}
 
 	ApplyRotateInPlace(DeltaTime);
 	ApplyTurnInPlace(DeltaTime);
@@ -1802,7 +1815,7 @@ void UAlsCharacterMovementComponent::ApplyRotateInPlace(const float DeltaTime)
 	{
 		return;
 	}
-
+	
 	//todo: come up with a way to not hard code the 1.0 curve length
 	if (LocomotionState.bMoving || !IsRotateInPlaceAllowed() || RotateInPlaceState.CurveTime >= 1.0f / RotateInPlaceState.PlayRate)
 	{

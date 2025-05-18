@@ -11,10 +11,10 @@ struct ALS_API FAlsRotateInPlaceState
 	float CurveTime{0.0f};
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS")
-	uint8 bRotatingLeft : 1 {false};
+	bool bRotatingLeft{false};
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS")
-	uint8 bRotatingRight : 1 {false};
+	bool bRotatingRight{false};
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ALS", Meta = (ClampMin = 0, ForceUnits = "x"))
 	float PlayRate{1.0f};
