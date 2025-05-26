@@ -743,13 +743,7 @@ void UAlsCharacterMovementComponent::RefreshGroundedMovementSettings(float Delta
 	    Velocity.SizeSquared() > UE_KINDA_SMALL_NUMBER &&
 	    IsValid(MovementSettings))
 	{
-		const auto* Controller{GetController()};
-	
-		const auto ViewRotation{
-			IsValid(Controller)
-				? GetController()->GetControlRotation()
-				: CharacterOwner->GetViewRotation()
-		};
+		const auto ViewRotation{GetControllerRotation_GMC()};
 	
 		// Ideally we should use actor rotation here instead of view rotation, but we can't do that because ALS has
 		// full control over actor rotation and it is not synchronized over the network, so it would cause jitter.
@@ -815,28 +809,6 @@ void UAlsCharacterMovementComponent::RefreshGroundedMovementSettings(float Delta
 		InputAccelerationGrounded = AccelerationAndDecelerationAndGroundFrictionCurves[0].Eval(GaitAmount);
 		BrakingDecelerationGrounded = AccelerationAndDecelerationAndGroundFrictionCurves[1].Eval(GaitAmount);
 		GroundFriction = AccelerationAndDecelerationAndGroundFrictionCurves[2].Eval(GaitAmount);
-		
-		//Modify friction for a short time after landing
-		if (LocomotionState.TimeSinceLanding > 0.0f)
-		{
-			//this isnt running on listen pawn
-			LocomotionState.TimeSinceLanding += DeltaSeconds;
-			
-			if (LocomotionState.TimeSinceLanding <= 0.5f)
-			{
-				static constexpr auto HasInputBrakingFrictionFactor{0.5f};
-				static constexpr auto NoInputBrakingFrictionFactor{3.0f};
-			
-				GroundFriction *= LocomotionState.bMoving ? HasInputBrakingFrictionFactor : NoInputBrakingFrictionFactor;
-			}
-
-			//We only need to track 2.5 seconds after landing for turn in place restriction
-			if (LocomotionState.TimeSinceLanding >= 2.5f)
-			{
-				LocomotionState.TimeSinceLanding = 0.f;
-			}
-		}
-
 	}
 }
 
@@ -1411,7 +1383,26 @@ void UAlsCharacterMovementComponent::RefreshLocomotion(const float DeltaTime)
 										(LocomotionState.RotationYawOffsets.BackwardAngle * LocomotionState.VelocityBlend.BackwardAmount) +
 										(LocomotionState.RotationYawOffsets.RightAngle * LocomotionState.VelocityBlend.RightAmount) +
 										(LocomotionState.RotationYawOffsets.LeftAngle * LocomotionState.VelocityBlend.LeftAmount);
-	
+
+	//Modify friction for a short time after landing
+	if (LocomotionState.TimeSinceLanding > 0.0f)
+	{
+		LocomotionState.TimeSinceLanding += DeltaTime;
+			
+		if (LocomotionState.TimeSinceLanding <= 0.5f)
+		{
+			static constexpr auto HasInputBrakingFrictionFactor{0.5f};
+			static constexpr auto NoInputBrakingFrictionFactor{3.0f};
+			
+			GroundFriction *= LocomotionState.bMoving ? HasInputBrakingFrictionFactor : NoInputBrakingFrictionFactor;
+		}
+
+		//We only need to track 2.5 seconds after landing for turn in place restriction
+		if (LocomotionState.TimeSinceLanding >= 2.5f)
+		{
+			LocomotionState.TimeSinceLanding = 0.f;
+		}
+	}
 }
 
 void UAlsCharacterMovementComponent::RefreshVelocityBlend(const float DeltaTime)
