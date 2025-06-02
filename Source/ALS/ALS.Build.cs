@@ -12,7 +12,8 @@ public class ALS : ModuleRules
 
 		PublicDependencyModuleNames.AddRange(new[]
 		{
-			"Core", "CoreUObject", "Engine", "GameplayTags", "AnimGraphRuntime", "RigVM", "ControlRig", "GMCCore"
+			"Core", "CoreUObject", "Engine", "GameplayTags", 
+			"AnimGraphRuntime", "RigVM", "ControlRig", "GMCCore", "AIModule"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new[]
