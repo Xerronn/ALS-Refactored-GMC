@@ -6,7 +6,6 @@
 #include "EnhancedInputComponent.h"
 #include "AlsCharacter.h"
 #include "Components/SkeletalMeshComponent.h"
-#include "Kismet/GameplayStatics.h"
 
 void UAlsCharacterMovementComponent::SetupPlayerInputComponent_Implementation(UInputComponent* PlayerInputComponent)
 {

@@ -582,13 +582,11 @@ void UAlsCharacterMovementComponent::StartMantling(const FAlsMantlingParameters&
 	MantlingState.ActorRotationOffset = ActorRotationOffset.Rotator();
 	MantlingState.TargetAnimationLocation = TargetAnimationLocation;
 	MantlingState.MontageStartTime = StartTime;
-
-	// Clear the character movement mode and set the locomotion action to mantling.
-
+	
 	SetMovementMode(GetMantlingMode());
 	
-	// Play the animation montage if valid.
 	PlayMontage_Blocking(SkeletalMesh, MontageTracker, MantlingSettings->Montage, StartTime, PlayRate);
+	
 	SetLocomotionAction(AlsLocomotionActionTags::Mantling);
 
 	OnMantlingStarted(Parameters);

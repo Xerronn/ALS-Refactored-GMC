@@ -2,17 +2,13 @@
 
 #include "AlsAnimationInstance.h"
 #include "AlsCharacter.h"
-#include "MaterialHLSLTree.h"
-#include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Curves/CurveVector.h"
 #include "Engine/World.h"
-#include "GameFramework/Controller.h"
 #include "Settings/AlsCharacterSettings.h"
 #include "Utility/AlsConstants.h"
 #include "Utility/AlsMacros.h"
 #include "Utility/AlsRotation.h"
-#include "Utility/AlsUtility.h"
 #include "Utility/AlsVector.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(AlsCharacterMovementComponent)
@@ -744,9 +740,6 @@ void UAlsCharacterMovementComponent::RefreshGroundedMovementSettings(float Delta
 	    IsValid(MovementSettings))
 	{
 		const auto ViewRotation{GetControllerRotation_GMC()};
-	
-		// Ideally we should use actor rotation here instead of view rotation, but we can't do that because ALS has
-		// full control over actor rotation and it is not synchronized over the network, so it would cause jitter.
 		
 		const auto RelativeViewRotation{UAlsRotation::GetTwist(ViewRotation.Quaternion(), FVector::DownVector)};
 	
