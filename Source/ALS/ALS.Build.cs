@@ -5,7 +5,7 @@ public class ALS : ModuleRules
 	public ALS(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
-		IncludeOrderVersion = EngineIncludeOrderVersion.Unreal5_6;
+		IncludeOrderVersion = EngineIncludeOrderVersion.Unreal5_7;
 		
 		CppCompileWarningSettings.NonInlinedGenCppWarningLevel = WarningLevel.Warning;
 
